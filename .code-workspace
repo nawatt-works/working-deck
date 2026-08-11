@@ -1,0 +1,36 @@
+{
+  "folders": [
+    {
+      "name": "workspace",
+      "path": "."
+    },
+    {
+      "name": "customer-portal",
+      "path": "repos/customer-portal"
+    },
+    {
+      "name": "order-api",
+      "path": "repos/order-api"
+    },
+    {
+      "name": "inventory-service",
+      "path": "repos/inventory-service"
+    },
+    {
+      "name": "notification-worker",
+      "path": "repos/notification-worker"
+    },
+    {
+      "name": "shared-library",
+      "path": "repos/shared-library"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "repos": true
+    },
+    "search.exclude": {
+      "repos/**": true
+    }
+  }
+}

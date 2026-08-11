@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate VS Code Workspace"
+  short_description: "Sync the committed multi-root workspace file"
+  default_prompt: "Use $generate-vscode-workspace to generate and validate the VS Code multi-root workspace."

@@ -1,0 +1,16 @@
+repositories:
+  - id: repo_customer_portal
+    service: customer-portal
+    path: repos/customer-portal
+  - id: repo_order_api
+    service: order-api
+    path: repos/order-api
+  - id: repo_inventory_service
+    service: inventory-service
+    path: repos/inventory-service
+  - id: repo_notification_worker
+    service: notification-worker
+    path: repos/notification-worker
+  - id: repo_shared_library
+    service: shared-library
+    path: repos/shared-library
