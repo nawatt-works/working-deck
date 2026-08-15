@@ -1,13 +1,3 @@
 schema_version: 1
 
-repositories:
-  - repo_id: repo_customer_portal
-    path: repos/customer-portal
-  - repo_id: repo_order_api
-    path: repos/order-api
-  - repo_id: repo_inventory_service
-    path: repos/inventory-service
-  - repo_id: repo_notification_worker
-    path: repos/notification-worker
-  - repo_id: repo_shared_library
-    path: repos/shared-library
+repositories: []

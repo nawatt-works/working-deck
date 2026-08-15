@@ -46,7 +46,7 @@ repositories:
 4. When creating or syncing the catalog, add every uncataloged direct child. Derive a default identity by converting the directory name to lowercase snake case and prefixing `repo_`; ask only when the result is invalid, ambiguous, or collides with an existing identity.
 5. Preserve catalog entries whose checkout is missing on the current machine. Remove or rename an entry only when the user requests that change explicitly.
 6. Write schema version 1 while preserving unaffected entries and their order. Append newly discovered entries in deterministic path order unless the user specifies an order.
-7. Validate identities, paths, uniqueness, direct-child scope, complete direct-child coverage, and Git-checkout warnings with `python3 tooling/generate_vscode_workspace.py --check`. A stale `.code-workspace` result is expected immediately after a valid catalog change.
+7. Validate the workspace-owned contract, identities, paths, uniqueness, direct-child scope, complete direct-child coverage, and Git-checkout warnings with `python3 tooling/validate_repository_catalog.py`.
 8. After the catalog is valid, use `$generate-vscode-workspace` to regenerate and check `.code-workspace`.
 
 ## Constraints
@@ -56,3 +56,4 @@ repositories:
 - Never initialize Git in a candidate directory as part of cataloging.
 - Never remove a catalog entry solely because its checkout is absent.
 - Keep derived knowledge and policy in separate files that reference `repo_id`.
+- Do not make a consumer-specific tool the owner of Catalog validation; use the workspace-level validator.

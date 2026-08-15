@@ -4,17 +4,32 @@ Workspace สำหรับทำงานร่วมกันระหว่�
 
 root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน บริบท เอกสาร เครื่องมือ และ configuration ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` และยังคงเป็น Git repository อิสระจาก root workspace
 
+Working Deck เป็น workspace starter สำหรับนำโครงสร้างและไฟล์ที่จำเป็นไปใช้เป็นฐานของ project อื่น ไม่ใช่ application project
+
+## เริ่ม Project ใหม่
+
+1. คัดลอกไฟล์และโฟลเดอร์ของ Working Deck ที่ต้องใช้ไปยัง project ใหม่ โดยไม่เอา `.git` และไฟล์ local ที่ไม่เกี่ยวข้องไปด้วย
+2. เปลี่ยนชื่อ `AGENTS_EXAMPLE.md` เป็น `AGENTS.md` เพื่อเปิดใช้ workspace instructions กับ AI harness ที่รองรับ
+3. นำ Git repositories ของ project ไปไว้เป็น direct child ใต้ `repos/`
+4. ใช้ `$manage-repository-catalog` หรือแก้ `.workbench/repositories.yaml` ให้ register repositories ทั้งหมด
+5. รัน `python3 tooling/validate_repository_catalog.py`
+6. รัน `python3 tooling/generate_vscode_workspace.py` แล้วเปิด `.code-workspace`
+
+Catalog ใน starter เริ่มด้วย `repositories: []` ส่วนตัวอย่าง schema อยู่ในเอกสารและ skill เพื่อไม่ให้ AI เข้าใจ mock repository ว่าเป็นสมาชิกจริงของ project ใหม่
+
 ## โครงสร้าง Workspace
 
 ```text
 .
 ├── AGENTS_EXAMPLE.md             # ร่างแนวทางการทำงานของ workspace
+├── GIT_STRATEGY_FOR_AI.md        # Git push และ upstream safety policy
 ├── README.md
 ├── .code-workspace               # generated VS Code multi-root workspace
 ├── .agents/
 │   └── skills/                   # skills ที่เป็นของ root workspace
 ├── .workbench/
-│   └── repositories.yaml         # canonical Repository Catalog
+│   ├── repositories.yaml         # Repository Catalog instance
+│   └── workspace-contracts/      # shared contracts สำหรับ consumers
 ├── .runtime/                     # temporary files และผลลัพธ์ระหว่างทาง
 ├── repos/                         # independent Git repositories
 └── tooling/                       # automation สำหรับดูแล root workspace
@@ -46,6 +61,10 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 เก็บ automation ที่ดูแล root workspace เครื่องมือในพื้นที่นี้ต้องไม่เขียนไฟล์ลง `repos/*` เว้นแต่ผู้ใช้ร้องขอให้แก้ตัวงานใน repository นั้นอย่างชัดเจน
 
+- `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
+- `generate_vscode_workspace.py` เป็น consumer ที่สร้าง `.code-workspace` จาก Catalog ที่ผ่าน validation
+- `repository_catalog.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
+
 ## Repository Catalog
 
 ไฟล์ `.workbench/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
@@ -66,9 +85,11 @@ repositories:
 
 schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่
 
+นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `.workbench/workspace-contracts/repository-catalog/` ซึ่งเป็น workspace infrastructure ไม่ได้เป็นของ VS Code generator, Software Factory หรือ Codebase Knowledge
+
 หากยังไม่มี cataloged repository ให้ใช้ `repositories: []` ซึ่งเป็น catalog ที่ถูกต้อง
 
-การอยู่ใน catalog ไม่ได้หมายความว่า AI มีสิทธิ์อ่าน แก้ไข หรือ execute repository นั้น ไม่ได้บังคับให้สร้าง codebase knowledge และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code ตัวอย่างเช่น repository ที่เป็น test environment, documentation, agent skill หรือ extension สามารถอยู่ใน catalog ได้โดยไม่ต้องถูก index
+การอยู่ใน catalog ไม่ได้หมายความว่า AI มีสิทธิ์อ่าน แก้ไข หรือ execute repository นั้น และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code ตัวอย่างเช่น repository ที่เป็น test environment, documentation, agent skill หรือ extension สามารถอยู่ใน catalog ได้
 
 `repos/` มีไว้สำหรับ repositories ที่เป็นสมาชิกของ project workspace เท่านั้น ดังนั้น direct child directory ทุกแห่งใต้ `repos/` ต้องมีรายการใน catalog ไม่ว่าจะเป็น application source code, documentation, test environment, agent skill, extension หรือ automation หากพบ directory ที่ไม่มีรายการ ให้ถือว่า Catalog drift และเพิ่มเข้า catalog
 
@@ -86,6 +107,12 @@ schema version 1 รองรับเฉพาะ `repo_id` และ `path` �
 ชื่อและ schema ของไฟล์เหล่านี้ยังต้องออกแบบแยกต่างหาก ห้ามเพิ่ม fields ดังกล่าวเข้า `repositories.yaml` ล่วงหน้า
 
 ## การสร้าง VS Code Workspace
+
+ตรวจ Repository Catalog โดยไม่ผูกกับ consumer ใด:
+
+```bash
+python3 tooling/validate_repository_catalog.py
+```
 
 รันคำสั่งนี้จาก workspace root:
 
@@ -110,6 +137,12 @@ code .code-workspace
 ไฟล์ `.code-workspace` ถูก commit ได้ แต่ไม่ควรแก้รายการ folders ด้วยมือ หากข้อมูลไม่ถูกต้องให้แก้ `.workbench/repositories.yaml` หรือ generator แล้วสร้างไฟล์ใหม่
 
 generator จะรวม cataloged repositories ทุกแห่งไว้ใน `.code-workspace` โดยไม่พิจารณา access หรือ indexing policy จะแจ้ง warning เมื่อ directory ใน catalog ยังไม่มีอยู่เพื่อรองรับกรณีที่ยังไม่ได้ clone และจะหยุดด้วย error เมื่อพบ direct child ใต้ `repos/` ที่ยังไม่มีใน Catalog
+
+รัน automated tests ของ contract และ tooling:
+
+```bash
+python3 -m unittest discover -s tooling/tests
+```
 
 ## AI Harness Isolation
 
@@ -142,6 +175,8 @@ generator จะรวม cataloged repositories ทุกแห่งไว้�
 5. ตรวจว่าไม่มี coordination artifacts ของ root workspace ปะปนอยู่ใน change set ของ external repository
 
 รายละเอียด policy ฉบับร่างอยู่ใน `AGENTS_EXAMPLE.md`
+
+Git push และ upstream safety policy อยู่ใน `GIT_STRATEGY_FOR_AI.md` และถูกอ้างจาก workspace instructions เพื่อให้ AI อ่านก่อนทำ remote write
 
 ## สิ่งที่จะออกแบบเพิ่มเติม
 

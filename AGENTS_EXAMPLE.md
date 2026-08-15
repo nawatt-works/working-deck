@@ -54,11 +54,12 @@ Workspace นี้แบ่งข้อมูลออกเป็น 3 พื�
 ## Workspace Tooling
 
 - `tooling/` ใช้เก็บ automation ที่ดูแล root workspace และไม่ใช่ source code ของ repository ใดภายใต้ `repos/`
+- `.workbench/workspace-contracts/repository-catalog/` เป็น workspace-level contract ของ Repository Catalog ส่วน Software Factory, Codebase Knowledge, VS Code generator และระบบอื่นเป็น consumers ที่เท่าเทียมกัน
 - `.workbench/repositories.yaml` เป็น source of truth สำหรับ cataloged repositories โดยใช้ `schema_version: 1` และแต่ละรายการมีเฉพาะ stable `repo_id` รูปแบบ `repo_<snake_case_name>` กับ `path` ที่เป็น direct child ใต้ `repos/`
 - access policy, indexing configuration, integration mapping และ generated knowledge ต้องเก็บแยกจาก Repository Catalog และอ้าง repository ด้วย `repo_id`
 - tool-specific configuration ต้องเป็นผู้เลือกว่าจะใช้หรือไม่ใช้ cataloged repository ใด ห้ามใช้การลบ repository ออกจาก Catalog เพื่อควบคุม access, indexing หรือ behavior ของเครื่องมือ
 - `.code-workspace` เป็น generated และ committed editor projection ที่รวม cataloged repositories ทุกแห่ง เพื่อให้ VS Code ที่เปิดจาก root workspace ค้นพบ repositories ใต้ `repos/` ซึ่งถูก root Git repository ignore
-- เมื่อแก้ `.workbench/repositories.yaml` ให้ generate `.code-workspace` ใหม่ด้วย `python3 tooling/generate_vscode_workspace.py` และตรวจความสอดคล้องด้วย `python3 tooling/generate_vscode_workspace.py --check`
+- เมื่อแก้ `.workbench/repositories.yaml` ให้ validate ด้วย `python3 tooling/validate_repository_catalog.py` จากนั้น generate `.code-workspace` ใหม่ด้วย `python3 tooling/generate_vscode_workspace.py` และตรวจความสอดคล้องด้วย `python3 tooling/generate_vscode_workspace.py --check`
 - workspace tooling ห้ามเขียนไฟล์ลงใน `repos/*` เว้นแต่คำสั่งนั้นมีวัตถุประสงค์เพื่อแก้ตัวงานใน repository และผู้ใช้ร้องขออย่างชัดเจน
 
 ## หลักการเลือกตำแหน่งไฟล์
@@ -71,6 +72,8 @@ Workspace นี้แบ่งข้อมูลออกเป็น 3 พื�
 - อย่าวาง source code ของ repository ไว้ที่ workspace root, `.workbench/` หรือ `tooling/`
 
 ## Git Workflow
+
+ก่อน push หรือเปลี่ยน upstream ของ root workspace หรือ repository ใต้ `repos/` ให้อ่านและปฏิบัติตาม `GIT_STRATEGY_FOR_AI.md` รวมถึง instructions ที่เฉพาะเจาะจงกว่าของ repository เป้าหมาย
 
 ก่อน merge feature branch เข้า integration branch ของ repository เป้าหมาย ให้ตรวจสอบ workflow และคำแนะนำของ repository นั้นก่อน ห้ามใช้ Git workflow ของ root workspace ครอบ external repositories โดยอัตโนมัติ
 
