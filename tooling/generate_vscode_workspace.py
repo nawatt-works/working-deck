@@ -44,6 +44,7 @@ def _load_minimal_yaml(path: Path) -> dict[str, Any]:
     repositories: list[dict[str, str]] = []
     current: dict[str, str] | None = None
     in_repositories = False
+    schema_version: str | None = None
     key_value = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$")
 
     for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
@@ -51,6 +52,12 @@ def _load_minimal_yaml(path: Path) -> dict[str, Any]:
             continue
         stripped = raw_line.strip()
         if not in_repositories:
+            if stripped.startswith("schema_version:"):
+                schema_version = _scalar(stripped.split(":", 1)[1], line_number)
+                continue
+            if stripped == "repositories: []":
+                in_repositories = True
+                continue
             if stripped == "repositories:":
                 in_repositories = True
             continue
@@ -74,7 +81,7 @@ def _load_minimal_yaml(path: Path) -> dict[str, Any]:
 
     if not in_repositories:
         raise ManifestError("missing top-level 'repositories' key")
-    return {"repositories": repositories}
+    return {"schema_version": schema_version, "repositories": repositories}
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -92,9 +99,18 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 
 def validate_repositories(data: dict[str, Any]) -> list[dict[str, str]]:
+    unexpected_top_level = set(data) - {"schema_version", "repositories"}
+    if unexpected_top_level:
+        unexpected = ", ".join(sorted(unexpected_top_level))
+        raise ManifestError(f"unsupported top-level fields: {unexpected}")
+
+    schema_version = data.get("schema_version")
+    if schema_version not in (1, "1"):
+        raise ManifestError("'schema_version' must be 1")
+
     repositories = data.get("repositories")
-    if not isinstance(repositories, list) or not repositories:
-        raise ManifestError("'repositories' must be a non-empty list")
+    if not isinstance(repositories, list):
+        raise ManifestError("'repositories' must be a list")
 
     result: list[dict[str, str]] = []
     seen_ids: set[str] = set()
@@ -102,21 +118,24 @@ def validate_repositories(data: dict[str, Any]) -> list[dict[str, str]]:
     for index, item in enumerate(repositories, 1):
         if not isinstance(item, dict):
             raise ManifestError(f"repository #{index} must be a mapping")
+        unexpected_keys = set(item) - {"id", "path"}
+        if unexpected_keys:
+            unexpected = ", ".join(sorted(unexpected_keys))
+            raise ManifestError(f"repository #{index} has unsupported fields: {unexpected}")
         repo_id = item.get("id")
         path_value = item.get("path")
-        service = item.get("service", repo_id)
         if not isinstance(repo_id, str) or not repo_id.strip():
             raise ManifestError(f"repository #{index} has an invalid 'id'")
-        if not isinstance(service, str) or not service.strip():
-            raise ManifestError(f"repository '{repo_id}' has an invalid 'service'")
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", repo_id):
+            raise ManifestError(f"repository id must be kebab-case: {repo_id}")
         if not isinstance(path_value, str) or not path_value.strip():
             raise ManifestError(f"repository '{repo_id}' has an invalid 'path'")
 
         relative_path = PurePosixPath(path_value)
         if relative_path.is_absolute() or ".." in relative_path.parts:
             raise ManifestError(f"repository '{repo_id}' path must be workspace-relative")
-        if not relative_path.parts or relative_path.parts[0] != "repos":
-            raise ManifestError(f"repository '{repo_id}' path must be under repos/")
+        if len(relative_path.parts) != 2 or relative_path.parts[0] != "repos":
+            raise ManifestError(f"repository '{repo_id}' path must be a direct child of repos/")
         normalized_path = relative_path.as_posix()
         if repo_id in seen_ids:
             raise ManifestError(f"duplicate repository id: {repo_id}")
@@ -124,7 +143,7 @@ def validate_repositories(data: dict[str, Any]) -> list[dict[str, str]]:
             raise ManifestError(f"duplicate repository path: {normalized_path}")
         seen_ids.add(repo_id)
         seen_paths.add(normalized_path)
-        result.append({"id": repo_id, "service": service, "path": normalized_path})
+        result.append({"id": repo_id, "path": normalized_path})
     return result
 
 
@@ -133,7 +152,7 @@ def render_workspace(repositories: list[dict[str, str]]) -> str:
         "folders": [
             {"name": "workspace", "path": "."},
             *(
-                {"name": repository["service"], "path": repository["path"]}
+                {"name": repository["id"], "path": repository["path"]}
                 for repository in repositories
             ),
         ],
@@ -164,6 +183,8 @@ def main() -> int:
         repository_path = ROOT / repository["path"]
         if not repository_path.is_dir():
             print(f"warning: repository directory not found: {repository_path}", file=sys.stderr)
+        elif not (repository_path / ".git").exists():
+            print(f"warning: registered path is not a Git checkout: {repository_path}", file=sys.stderr)
 
     output = DEFAULT_OUTPUT
     if args.check:

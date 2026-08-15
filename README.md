@@ -38,28 +38,37 @@ repository แต่ละแห่งอาจเป็น single-project repos
 
 root Git repository ignore เนื้อหาภายใต้ `repos/` เพื่อป้องกันไม่ให้ source code หรือการเปลี่ยนแปลงของ external repository ถูก commit ปะปนกับ coordination workspace การตั้งค่านี้ไม่ได้ห้าม repository แต่ละแห่งเป็น monorepo ภายในขอบเขตของตัวเอง
 
+ในเอกสารของ workspace นี้ คำว่า **repo** หรือ **repository** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout หากยังไม่ใช่ Git repository ให้ถือเป็นข้อยกเว้นและแสดง warning ส่วน **registered repository** หมายถึง repo ที่ถูกเลือกและมีรายการอยู่ใน `.workbench/repositories.yaml` ไม่จำเป็นต้อง register ทุก repo ที่มีอยู่บน disk
+
+คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ registered repository
+
 ### `tooling/`
 
 เก็บ automation ที่ดูแล root workspace เครื่องมือในพื้นที่นี้ต้องไม่เขียนไฟล์ลง `repos/*` เว้นแต่ผู้ใช้ร้องขอให้แก้ตัวงานใน repository นั้นอย่างชัดเจน
 
 ## Repository Registry
 
-ไฟล์ `.workbench/repositories.yaml` เป็น source of truth สำหรับรายชื่อ repository และตำแหน่ง checkout:
+ไฟล์ `.workbench/repositories.yaml` เป็น source of truth สำหรับ registered repositories เท่านั้น:
 
 ```yaml
+schema_version: 1
+
 repositories:
-  - id: repo_order_api
-    service: order-api
+  - id: order-api
     path: repos/order-api
 ```
 
 ความหมายของแต่ละ field:
 
-- `id` — identity ที่คงที่ของ repository ภายใน workspace
-- `service` — ชื่อที่ใช้แสดงใน VS Code workspace
-- `path` — relative path ของ repository โดยต้องอยู่ภายใต้ `repos/`
+- `schema_version` — version ของ registry schema ปัจจุบันต้องเป็น `1`
+- `id` — identity ที่คงที่และไม่ซ้ำในรูปแบบ kebab-case
+- `path` — relative path ที่ไม่ซ้ำและต้องเป็น direct child ภายใต้ `repos/`
 
-เมื่อเพิ่ม ลบ เปลี่ยนชื่อ หรือย้าย repository ให้แก้ registry ก่อน แล้ว generate `.code-workspace` ใหม่
+schema version 1 รองรับเฉพาะ `id` และ `path` เพื่อให้ registry ทำหน้าที่เป็นรายการเลือก repository โดยไม่ปะปนกับ metadata ด้าน service, ownership, remote หรือ integrations
+
+หากยังไม่มี registered repository ให้ใช้ `repositories: []` ซึ่งเป็น registry ที่ถูกต้อง
+
+การมี repo อยู่ใต้ `repos/` ไม่ได้ทำให้ repo นั้นถูก register โดยอัตโนมัติ เมื่อเพิ่ม ลบ เปลี่ยนชื่อ หรือย้าย registered repository ให้แก้ registry ก่อน แล้ว generate `.code-workspace` ใหม่
 
 ## การสร้าง VS Code Workspace
 
@@ -93,14 +102,18 @@ generator จะแจ้ง warning เมื่อ directory ใน registry �
 
 ข้อกำหนดใน workspace สามารถป้องกันการสร้างหรือแก้ไฟล์โดยตั้งใจได้ แต่ไม่รับประกันว่า AI harness ทุก provider จะไม่ค้นพบหรือโหลด nested configuration การควบคุม instruction discovery ต้องตั้งค่าแยกตาม provider
 
-## Skill สำหรับ Generate Workspace
+## Skills สำหรับ Repository Workspace
 
-skill `generate-vscode-workspace` อยู่ที่ `.agents/skills/generate-vscode-workspace/` ใช้สำหรับให้ AI สร้างและตรวจ `.code-workspace` ด้วย workflow เดียวกับที่มนุษย์ใช้
+แยก workflow เป็นสอง skills:
+
+- `manage-repository-registry` อยู่ที่ `.agents/skills/manage-repository-registry/` ใช้ค้นหา repo candidates และสร้าง เพิ่ม ลบ หรือแก้ registered repositories ตามรายการที่ผู้ใช้เลือก โดยจะไม่ register ทุก repo อัตโนมัติ
+- `generate-vscode-workspace` อยู่ที่ `.agents/skills/generate-vscode-workspace/` ใช้อ่าน registry ที่มีอยู่แล้วเพื่อสร้างและตรวจ `.code-workspace` เท่านั้น
 
 ตัวอย่างคำขอ:
 
 ```text
-ใช้ $generate-vscode-workspace เพิ่ม repository ใหม่และตรวจว่า VS Code workspace เป็นปัจจุบัน
+ใช้ $manage-repository-registry เพิ่ม order-api เข้า registry
+ใช้ $generate-vscode-workspace สร้าง VS Code workspace จาก registry ล่าสุด
 ```
 
 ## แนวทางการทำงาน

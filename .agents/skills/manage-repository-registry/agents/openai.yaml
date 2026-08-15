@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Repository Registry"
+  short_description: "Select and maintain registered repositories"
+  default_prompt: "Use $manage-repository-registry to discover repository candidates and update the selective registry."

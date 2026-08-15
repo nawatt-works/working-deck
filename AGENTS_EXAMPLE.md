@@ -28,7 +28,9 @@ Workspace นี้แบ่งข้อมูลออกเป็น 3 พื�
 - แต่ละโฟลเดอร์ระดับแรกภายใต้ `repos/` โดยปกติต้องเป็น Git repository อิสระจาก root workspace และอาจเป็น repository ที่บุคคลหรือทีมภายนอกเป็นเจ้าของ
 - repository ภายใต้ `repos/` อาจเป็น single-project repository หรือ monorepo ที่ประกอบด้วยหลาย applications, services, packages หรือ libraries ก็ได้
 - ห้ามอนุมานโครงสร้างภายใน repository จากตำแหน่งที่อยู่ใต้ `repos/` ให้ตรวจ configuration, documentation และคำแนะนำของ repository เป้าหมายก่อนทำงานเสมอ
-- รายการ repository และตำแหน่งที่ตั้งกำหนดไว้ใน `.workbench/repositories.yaml` ให้ใช้ไฟล์นี้เป็น registry แทนการอนุมานจากชื่อโฟลเดอร์
+- ในเอกสารของ workspace นี้ คำว่า **repo** หรือ **repository** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout ส่วน **registered repository** หมายถึง repo ที่มีรายการอยู่ใน `.workbench/repositories.yaml`
+- คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ registered repository
+- `.workbench/repositories.yaml` เป็น selective registry ไม่จำเป็นต้องมีทุก repo ที่อยู่ใต้ `repos/` และห้าม register repo ที่ผู้ใช้ไม่ได้เลือกโดยอัตโนมัติ
 - `repos/*` ถูก ignore จาก root Git repository ห้ามสมมติว่า root workspace และ repositories เหล่านี้รวมกันเป็น monorepo หรือใช้ Git history, branch, staging area, dependencies หรือ tooling ร่วมกัน ทั้งนี้ repository แต่ละแห่งอาจเป็น monorepo ภายในขอบเขตของตัวเองได้
 - ก่อนเรียก Git command หรือเครื่องมือเฉพาะ repository ให้เปลี่ยน working directory เข้า repository เป้าหมายก่อน
 - การแก้ไขแต่ละ repository ต้องจำกัดเฉพาะงานที่ผู้ใช้ร้องขอ และต้องปฏิบัติต่อ repository อื่นเป็นขอบเขตอิสระ
@@ -48,8 +50,8 @@ Workspace นี้แบ่งข้อมูลออกเป็น 3 พื�
 ## Workspace Tooling
 
 - `tooling/` ใช้เก็บ automation ที่ดูแล root workspace และไม่ใช่ source code ของ repository ใดภายใต้ `repos/`
-- `.workbench/repositories.yaml` เป็น source of truth สำหรับรายชื่อ repository
-- `.code-workspace` เป็น generated และ committed projection สำหรับเปิด repositories ทั้งหมดเป็น VS Code multi-root workspace
+- `.workbench/repositories.yaml` เป็น source of truth สำหรับ registered repositories โดยใช้ `schema_version: 1` และแต่ละรายการมีเฉพาะ `id` แบบ kebab-case กับ `path` ที่เป็น direct child ใต้ `repos/`
+- `.code-workspace` เป็น generated และ committed projection สำหรับเปิดเฉพาะ registered repositories เป็น VS Code multi-root workspace
 - เมื่อแก้ `.workbench/repositories.yaml` ให้ generate `.code-workspace` ใหม่ด้วย `python3 tooling/generate_vscode_workspace.py` และตรวจความสอดคล้องด้วย `python3 tooling/generate_vscode_workspace.py --check`
 - workspace tooling ห้ามเขียนไฟล์ลงใน `repos/*` เว้นแต่คำสั่งนั้นมีวัตถุประสงค์เพื่อแก้ตัวงานใน repository และผู้ใช้ร้องขออย่างชัดเจน
 

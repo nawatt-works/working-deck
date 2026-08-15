@@ -1,16 +1,13 @@
+schema_version: 1
+
 repositories:
-  - id: repo_customer_portal
-    service: customer-portal
+  - id: customer-portal
     path: repos/customer-portal
-  - id: repo_order_api
-    service: order-api
+  - id: order-api
     path: repos/order-api
-  - id: repo_inventory_service
-    service: inventory-service
+  - id: inventory-service
     path: repos/inventory-service
-  - id: repo_notification_worker
-    service: notification-worker
+  - id: notification-worker
     path: repos/notification-worker
-  - id: repo_shared_library
-    service: shared-library
+  - id: shared-library
     path: repos/shared-library
