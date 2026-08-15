@@ -1,4 +1,4 @@
 interface:
   display_name: "Generate VS Code Workspace"
-  short_description: "Project the registry into a VS Code workspace"
-  default_prompt: "Use $generate-vscode-workspace to regenerate and validate the VS Code workspace from the existing registry."
+  short_description: "Project the catalog into a VS Code workspace"
+  default_prompt: "Use $generate-vscode-workspace to regenerate and validate the VS Code workspace from the Repository Catalog."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the committed VS Code multi-root workspace from the repository registry."""
+"""Generate the committed VS Code multi-root workspace from the Repository Catalog."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ DEFAULT_OUTPUT = ROOT / ".code-workspace"
 
 
 class ManifestError(ValueError):
-    """Raised when the repository registry is invalid."""
+    """Raised when the Repository Catalog is invalid."""
 
 
 def _scalar(value: str, line_number: int) -> str:
@@ -40,7 +40,7 @@ def _scalar(value: str, line_number: int) -> str:
 
 
 def _load_minimal_yaml(path: Path) -> dict[str, Any]:
-    """Read the intentionally small repositories.yaml schema without dependencies."""
+    """Read the intentionally small Repository Catalog schema without dependencies."""
     repositories: list[dict[str, str]] = []
     current: dict[str, str] | None = None
     in_repositories = False
@@ -94,7 +94,7 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
-        raise ManifestError("manifest root must be a mapping")
+        raise ManifestError("catalog root must be a mapping")
     return data
 
 
@@ -118,16 +118,16 @@ def validate_repositories(data: dict[str, Any]) -> list[dict[str, str]]:
     for index, item in enumerate(repositories, 1):
         if not isinstance(item, dict):
             raise ManifestError(f"repository #{index} must be a mapping")
-        unexpected_keys = set(item) - {"id", "path"}
+        unexpected_keys = set(item) - {"repo_id", "path"}
         if unexpected_keys:
             unexpected = ", ".join(sorted(unexpected_keys))
             raise ManifestError(f"repository #{index} has unsupported fields: {unexpected}")
-        repo_id = item.get("id")
+        repo_id = item.get("repo_id")
         path_value = item.get("path")
         if not isinstance(repo_id, str) or not repo_id.strip():
-            raise ManifestError(f"repository #{index} has an invalid 'id'")
-        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", repo_id):
-            raise ManifestError(f"repository id must be kebab-case: {repo_id}")
+            raise ManifestError(f"repository #{index} has an invalid 'repo_id'")
+        if not re.fullmatch(r"repo_[a-z0-9]+(?:_[a-z0-9]+)*", repo_id):
+            raise ManifestError(f"repo_id must match repo_<snake_case_name>: {repo_id}")
         if not isinstance(path_value, str) or not path_value.strip():
             raise ManifestError(f"repository '{repo_id}' has an invalid 'path'")
 
@@ -138,12 +138,12 @@ def validate_repositories(data: dict[str, Any]) -> list[dict[str, str]]:
             raise ManifestError(f"repository '{repo_id}' path must be a direct child of repos/")
         normalized_path = relative_path.as_posix()
         if repo_id in seen_ids:
-            raise ManifestError(f"duplicate repository id: {repo_id}")
+            raise ManifestError(f"duplicate repo_id: {repo_id}")
         if normalized_path in seen_paths:
             raise ManifestError(f"duplicate repository path: {normalized_path}")
         seen_ids.add(repo_id)
         seen_paths.add(normalized_path)
-        result.append({"id": repo_id, "path": normalized_path})
+        result.append({"repo_id": repo_id, "path": normalized_path})
     return result
 
 
@@ -152,7 +152,10 @@ def render_workspace(repositories: list[dict[str, str]]) -> str:
         "folders": [
             {"name": "workspace", "path": "."},
             *(
-                {"name": repository["id"], "path": repository["path"]}
+                {
+                    "name": PurePosixPath(repository["path"]).name,
+                    "path": repository["path"],
+                }
                 for repository in repositories
             ),
         ],
@@ -184,7 +187,7 @@ def main() -> int:
         if not repository_path.is_dir():
             print(f"warning: repository directory not found: {repository_path}", file=sys.stderr)
         elif not (repository_path / ".git").exists():
-            print(f"warning: registered path is not a Git checkout: {repository_path}", file=sys.stderr)
+            print(f"warning: cataloged path is not a Git checkout: {repository_path}", file=sys.stderr)
 
     output = DEFAULT_OUTPUT
     if args.check:
