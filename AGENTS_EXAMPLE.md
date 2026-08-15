@@ -30,7 +30,9 @@ Workspace นี้แบ่งข้อมูลออกเป็น 3 พื�
 - ห้ามอนุมานโครงสร้างภายใน repository จากตำแหน่งที่อยู่ใต้ `repos/` ให้ตรวจ configuration, documentation และคำแนะนำของ repository เป้าหมายก่อนทำงานเสมอ
 - ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `.workbench/repositories.yaml`
 - คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ cataloged repository
-- `.workbench/repositories.yaml` เป็น canonical Repository Catalog ของ repositories ที่ project workspace รู้จัก แต่ห้ามเพิ่มทุก directory ใต้ `repos/` เข้า catalog โดยอัตโนมัติเมื่อยังไม่ชัดว่าเป็นส่วนหนึ่งของ project workspace หรือไม่
+- `.workbench/repositories.yaml` เป็น authoritative Repository Catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace
+- `repos/` ต้องมีเฉพาะ workspace repositories ดังนั้น direct child directory ทุกแห่งใต้ `repos/` ต้องมีรายการใน Repository Catalog หากพบ directory ที่ไม่มีรายการ ให้ถือว่า Catalog drift และเพิ่มเข้า catalog
+- cataloged repository อาจยังไม่มี checkout บนเครื่องปัจจุบันได้ ให้แจ้ง warning และห้ามลบรายการออกจาก Catalog โดยอัตโนมัติเพียงเพราะ directory ไม่มีอยู่
 - การอยู่ใน Repository Catalog ไม่ได้ให้สิทธิ์ AI อ่าน เขียน หรือ execute repository ไม่ได้บังคับให้ codebase knowledge index repository และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code
 - repository ที่เป็น test environment, documentation, agent skill, extension, fixture หรือ automation สามารถอยู่ใน catalog ได้แม้ไม่ต้องถูก codebase knowledge index
 - `repos/*` ถูก ignore จาก root Git repository ห้ามสมมติว่า root workspace และ repositories เหล่านี้รวมกันเป็น monorepo หรือใช้ Git history, branch, staging area, dependencies หรือ tooling ร่วมกัน ทั้งนี้ repository แต่ละแห่งอาจเป็น monorepo ภายในขอบเขตของตัวเองได้
@@ -54,7 +56,8 @@ Workspace นี้แบ่งข้อมูลออกเป็น 3 พื�
 - `tooling/` ใช้เก็บ automation ที่ดูแล root workspace และไม่ใช่ source code ของ repository ใดภายใต้ `repos/`
 - `.workbench/repositories.yaml` เป็น source of truth สำหรับ cataloged repositories โดยใช้ `schema_version: 1` และแต่ละรายการมีเฉพาะ stable `repo_id` รูปแบบ `repo_<snake_case_name>` กับ `path` ที่เป็น direct child ใต้ `repos/`
 - access policy, indexing configuration, integration mapping และ generated knowledge ต้องเก็บแยกจาก Repository Catalog และอ้าง repository ด้วย `repo_id`
-- `.code-workspace` เป็น generated และ committed editor projection ของ Repository Catalog เพื่อให้ VS Code ที่เปิดจาก root workspace ค้นพบ repositories ใต้ `repos/` ซึ่งถูก root Git repository ignore
+- tool-specific configuration ต้องเป็นผู้เลือกว่าจะใช้หรือไม่ใช้ cataloged repository ใด ห้ามใช้การลบ repository ออกจาก Catalog เพื่อควบคุม access, indexing หรือ behavior ของเครื่องมือ
+- `.code-workspace` เป็น generated และ committed editor projection ที่รวม cataloged repositories ทุกแห่ง เพื่อให้ VS Code ที่เปิดจาก root workspace ค้นพบ repositories ใต้ `repos/` ซึ่งถูก root Git repository ignore
 - เมื่อแก้ `.workbench/repositories.yaml` ให้ generate `.code-workspace` ใหม่ด้วย `python3 tooling/generate_vscode_workspace.py` และตรวจความสอดคล้องด้วย `python3 tooling/generate_vscode_workspace.py --check`
 - workspace tooling ห้ามเขียนไฟล์ลงใน `repos/*` เว้นแต่คำสั่งนั้นมีวัตถุประสงค์เพื่อแก้ตัวงานใน repository และผู้ใช้ร้องขออย่างชัดเจน
 

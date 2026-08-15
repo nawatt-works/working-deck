@@ -48,7 +48,7 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 ## Repository Catalog
 
-ไฟล์ `.workbench/repositories.yaml` เป็น canonical catalog ของ repositories ที่ project workspace รู้จัก และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
+ไฟล์ `.workbench/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
 
 ```yaml
 schema_version: 1
@@ -70,11 +70,13 @@ schema version 1 รองรับเฉพาะ `repo_id` และ `path` �
 
 การอยู่ใน catalog ไม่ได้หมายความว่า AI มีสิทธิ์อ่าน แก้ไข หรือ execute repository นั้น ไม่ได้บังคับให้สร้าง codebase knowledge และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code ตัวอย่างเช่น repository ที่เป็น test environment, documentation, agent skill หรือ extension สามารถอยู่ใน catalog ได้โดยไม่ต้องถูก index
 
-การมี directory อยู่ใต้ `repos/` ไม่ได้ทำให้ถูกเพิ่มเข้า catalog โดยอัตโนมัติ เมื่อ project workspace ต้องรู้จัก repository ใหม่ ให้เพิ่มอย่างชัดเจนและใช้ `repo_id` เดิมเป็น identity แม้ path หรือชื่อ checkout จะเปลี่ยนในภายหลัง
+`repos/` มีไว้สำหรับ repositories ที่เป็นสมาชิกของ project workspace เท่านั้น ดังนั้น direct child directory ทุกแห่งใต้ `repos/` ต้องมีรายการใน catalog ไม่ว่าจะเป็น application source code, documentation, test environment, agent skill, extension หรือ automation หากพบ directory ที่ไม่มีรายการ ให้ถือว่า Catalog drift และเพิ่มเข้า catalog
+
+ในทางกลับกัน cataloged repository อาจยังไม่มี checkout บนเครื่องปัจจุบันได้ เช่น ยังไม่ได้ clone เครื่องมือจะแจ้ง warning แต่ห้ามลบรายการนั้นโดยอัตโนมัติ เพราะ Catalog อธิบาย project workspace ไม่ใช่เฉพาะสิ่งที่มีอยู่บนเครื่องหนึ่งเครื่อง
 
 ## ข้อมูลที่แยกจาก Repository Catalog
 
-ข้อมูลที่มี lifecycle หรือหน้าที่ต่างจาก catalog ต้องอยู่คนละไฟล์และอ้าง repository ด้วย `repo_id` ตัวอย่างชั้นข้อมูลที่อาจเพิ่มในอนาคต:
+ข้อมูลที่มี lifecycle หรือหน้าที่ต่างจาก catalog ต้องอยู่คนละไฟล์และอ้าง repository ด้วย `repo_id` แต่ละเครื่องมือจึงเลือกใช้ repository subset ของตัวเองได้โดยไม่ทำให้ Catalog ขาดสมาชิก ตัวอย่างชั้นข้อมูลที่อาจเพิ่มในอนาคต:
 
 - `ai-access-policy.yaml` — AI อ่าน เขียน หรือ execute repository ใดได้
 - `codebase-knowledge.yaml` — repository ใดต้อง index และใช้เครื่องมือหรือ configuration ใด
@@ -107,7 +109,7 @@ code .code-workspace
 
 ไฟล์ `.code-workspace` ถูก commit ได้ แต่ไม่ควรแก้รายการ folders ด้วยมือ หากข้อมูลไม่ถูกต้องให้แก้ `.workbench/repositories.yaml` หรือ generator แล้วสร้างไฟล์ใหม่
 
-generator จะแจ้ง warning เมื่อ directory ใน catalog ยังไม่มีอยู่ แต่ยังสามารถสร้าง workspace file ได้ เพื่อรองรับกรณีที่ repository ยังไม่ได้ clone
+generator จะรวม cataloged repositories ทุกแห่งไว้ใน `.code-workspace` โดยไม่พิจารณา access หรือ indexing policy จะแจ้ง warning เมื่อ directory ใน catalog ยังไม่มีอยู่เพื่อรองรับกรณีที่ยังไม่ได้ clone และจะหยุดด้วย error เมื่อพบ direct child ใต้ `repos/` ที่ยังไม่มีใน Catalog
 
 ## AI Harness Isolation
 
@@ -121,7 +123,7 @@ generator จะแจ้ง warning เมื่อ directory ใน catalog �
 
 แยก workflow เป็นสอง skills:
 
-- `manage-repository-catalog` อยู่ที่ `.agents/skills/manage-repository-catalog/` ใช้ค้นหา repo candidates และสร้าง เพิ่ม ลบ หรือแก้ canonical Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
+- `manage-repository-catalog` อยู่ที่ `.agents/skills/manage-repository-catalog/` ใช้ค้นหาและ sync direct child repositories ทั้งหมด รวมถึงสร้าง เพิ่ม ลบ หรือแก้ authoritative Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
 - `generate-vscode-workspace` อยู่ที่ `.agents/skills/generate-vscode-workspace/` ใช้อ่าน catalog ที่มีอยู่แล้วเพื่อสร้างและตรวจ `.code-workspace` เท่านั้น
 
 ตัวอย่างคำขอ:

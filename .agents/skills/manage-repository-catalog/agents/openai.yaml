@@ -1,4 +1,4 @@
 interface:
   display_name: "Manage Repository Catalog"
-  short_description: "Maintain the canonical repository catalog"
-  default_prompt: "Use $manage-repository-catalog to discover project repositories and update the canonical catalog."
+  short_description: "Keep the repository catalog complete and canonical"
+  default_prompt: "Use $manage-repository-catalog to discover workspace repositories and reconcile the authoritative catalog."

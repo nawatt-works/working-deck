@@ -147,6 +147,25 @@ def validate_repositories(data: dict[str, Any]) -> list[dict[str, str]]:
     return result
 
 
+def discover_repository_paths() -> set[str]:
+    """Return direct child directories under repos/ as workspace-relative paths."""
+    repositories_root = ROOT / "repos"
+    if not repositories_root.is_dir():
+        return set()
+    return {
+        path.relative_to(ROOT).as_posix()
+        for path in repositories_root.iterdir()
+        if path.is_dir()
+    }
+
+
+def find_uncataloged_paths(
+    repositories: list[dict[str, str]], discovered_paths: set[str]
+) -> list[str]:
+    cataloged_paths = {repository["path"] for repository in repositories}
+    return sorted(discovered_paths - cataloged_paths)
+
+
 def render_workspace(repositories: list[dict[str, str]]) -> str:
     workspace = {
         "folders": [
@@ -177,6 +196,14 @@ def main() -> int:
     args = parse_args()
     try:
         repositories = validate_repositories(load_manifest(DEFAULT_MANIFEST))
+        uncataloged_paths = find_uncataloged_paths(
+            repositories, discover_repository_paths()
+        )
+        if uncataloged_paths:
+            paths = ", ".join(uncataloged_paths)
+            raise ManifestError(
+                f"workspace repository directories missing from catalog: {paths}"
+            )
         expected = render_workspace(repositories)
     except (ManifestError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
