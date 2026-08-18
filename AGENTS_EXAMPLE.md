@@ -38,7 +38,12 @@ Workspace นี้แบ่งข้อมูลออกเป็น 2 พื�
 - การอยู่ใน Repository Catalog ไม่ได้ให้สิทธิ์ AI อ่าน เขียน หรือ execute repository ไม่ได้บังคับให้ codebase knowledge index repository และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code
 - repository ที่เป็น test environment, documentation, agent skill, extension, fixture หรือ automation สามารถอยู่ใน catalog ได้แม้ไม่ต้องถูก codebase knowledge index
 - `repos/*` ถูก ignore จาก root Git repository ห้ามสมมติว่า root workspace และ repositories เหล่านี้รวมกันเป็น monorepo หรือใช้ Git history, branch, staging area, dependencies หรือ tooling ร่วมกัน ทั้งนี้ repository แต่ละแห่งอาจเป็น monorepo ภายในขอบเขตของตัวเองได้
-- ก่อนเรียก Git command หรือเครื่องมือเฉพาะ repository ให้เปลี่ยน working directory เข้า repository เป้าหมายก่อน
+- repository ที่มี `.git` ของตัวเองต้องถูก root ignore เสมอ หาก commit เข้า root จะกลายเป็น gitlink ที่ clone แล้วได้โฟลเดอร์ว่าง
+- โฟลเดอร์ใต้ `repos/` ที่ไม่มี `.git` ของตัวเอง ต้อง opt-in ด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore` ไม่งั้นงานจะไม่ถูก track ทั้งใน root และในตัวมันเอง
+- ตรวจสถานะทุก repository ด้วย `python3 tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
+- ก่อนเรียก Git command หรือเครื่องมือเฉพาะ repository เช่น test runner หรือ build ให้เปลี่ยน working directory เข้า repository เป้าหมายก่อน
+- การค้นหาโค้ดทำได้จาก workspace root โดยตรง ไฟล์ `.ignore` ที่ root ทำให้ `rg` และ `fd` มองเห็นเนื้อหาใต้ `repos/` แม้ Git จะยัง ignore อยู่ ห้ามแก้หรือลบไฟล์นี้เพราะจะทำให้การค้นหาที่ root คืนผลว่างโดยไม่มี error
+- หากใช้เครื่องมือค้นหาที่ไม่อ่าน `.ignore` ให้ค้นภายใน repository เป้าหมายแทน ห้ามสรุปว่าโค้ดไม่มีอยู่จากผลการค้นหาที่ว่างเปล่า
 - การแก้ไขแต่ละ repository ต้องจำกัดเฉพาะงานที่ผู้ใช้ร้องขอ และต้องปฏิบัติต่อ repository อื่นเป็นขอบเขตอิสระ
 - ห้าม commit secrets หรือ credentials ส่วน credential files ที่จำเป็นต่อ local development ต้องเป็นรูปแบบที่ repository นั้นอนุญาตและถูก ignore จาก Git
 

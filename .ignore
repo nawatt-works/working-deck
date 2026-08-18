@@ -1,0 +1,7 @@
+# ripgrep, fd และเครื่องมือค้นหาอื่นอ่านไฟล์นี้ด้วย priority สูงกว่า .gitignore
+# บรรทัดล่างยกเลิกการ ignore repos/ เฉพาะสำหรับการค้นหา ทำให้ค้นจาก workspace root
+# แล้วเจอโค้ดในทุก repo ขณะที่ Git ยังมองไม่เห็นเหมือนเดิม
+#
+# ใช้ repos/* ไม่ใช่ repos/** โดยตั้งใจ เพราะ ** จะลบล้าง .gitignore ของแต่ละ repo
+# ทำให้ node_modules, dist และ build artifacts โผล่ขึ้นมาในผลการค้นหาด้วย
+!repos/*

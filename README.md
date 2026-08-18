@@ -25,6 +25,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 ├── GIT_STRATEGY_FOR_AI.md   # Git push และ upstream safety policy
 ├── README.md
 ├── .code-workspace          # generated VS Code multi-root workspace
+├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
 ├── .agents/
 │   └── skills/              # skills ที่เป็นของ root workspace
 ├── workbench/
@@ -49,7 +50,9 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 
 repository แต่ละแห่งอาจเป็น single-project repository หรือ monorepo ที่มีหลาย applications, services, packages หรือ libraries อยู่ภายในก็ได้ การอยู่ใต้ `repos/` บอกเพียง Git boundary ระดับ workspace ไม่ได้บอกรูปแบบโครงสร้างภายใน repository ดังนั้นต้องตรวจ configuration และ documentation ของ repository เป้าหมายก่อนทำงานเสมอ
 
-root Git repository ignore เนื้อหาภายใต้ `repos/` เพื่อป้องกันไม่ให้ source code หรือการเปลี่ยนแปลงของ external repository ถูก commit ปะปนกับ coordination workspace การตั้งค่านี้ไม่ได้ห้าม repository แต่ละแห่งเป็น monorepo ภายในขอบเขตของตัวเอง
+root Git repository ignore เนื้อหาภายใต้ `repos/` เป็นค่าเริ่มต้น เพื่อไม่ให้ repository ที่มี `.git` ของตัวเองถูก commit เข้า root ซึ่งจะกลายเป็น gitlink ที่ clone แล้วได้โฟลเดอร์ว่าง การตั้งค่านี้ไม่ได้ห้าม repository แต่ละแห่งเป็น monorepo ภายในขอบเขตของตัวเอง
+
+บาง project มีโฟลเดอร์ใต้ `repos/` ที่ไม่จำเป็นต้องมี Git ของตัวเองและควรถูก commit ไปกับ root workspace กรณีนี้ให้ opt-in ทีละรายการด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore`
 
 ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout หากยังไม่ใช่ Git repository ให้ถือเป็นข้อยกเว้นและแสดง warning ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workbench/repositories.yaml`
 
@@ -61,6 +64,7 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 - `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
 - `generate_vscode_workspace.py` เป็น consumer ที่สร้าง `.code-workspace` จาก Catalog ที่ผ่าน validation
+- `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ repository ภายนอก
 - `repository_catalog.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
 
 ## Repository Catalog
@@ -103,6 +107,41 @@ schema version 1 รองรับเฉพาะ `repo_id` และ `path` �
 - `codebase-knowledge/` — generated knowledge ราย repository และ project-level knowledge ที่ประกอบขึ้นภายหลัง
 
 ชื่อและ schema ของไฟล์เหล่านี้ยังต้องออกแบบแยกต่างหาก ห้ามเพิ่ม fields ดังกล่าวเข้า `repositories.yaml` ล่วงหน้า
+
+## การติดตามสถานะ Repositories
+
+`git status` ที่ workspace root ตอบไม่ได้ว่างานใน `repos/` ถูกบันทึกแล้วหรือยัง เพราะเนื้อหาใต้ `repos/` ถูก ignore ใช้คำสั่งนี้แทน:
+
+```bash
+python3 tooling/repos_status.py
+```
+
+เครื่องมือนี้รายงานสถานะ Git ของทุก repository พร้อมตรวจสองอย่างที่ root มองไม่เห็น
+
+**tracking state** — repository แต่ละแห่งต้องอยู่ในสถานะใดสถานะหนึ่งที่ถูกต้อง
+
+| มี `.git` ของตัวเอง | root ignore | สถานะ | ผลลัพธ์ |
+| --- | --- | --- | --- |
+| ใช่ | ใช่ | `external` | ถูกต้อง |
+| ไม่ | ไม่ | `internal` | ถูกต้อง |
+| ใช่ | ไม่ | `gitlink` | error — commit แล้วจะได้ gitlink ที่ clone มาว่างเปล่า |
+| ไม่ | ใช่ | `untracked` | error — งานไม่ถูก track ทั้งใน root และในตัวมันเอง |
+
+สถานะ `untracked` เป็นเหตุผลหลักที่ต้องมีเครื่องมือนี้ เพราะโฟลเดอร์ที่ไม่มี Git ของตัวเองและถูก root ignore คืองานที่มีอยู่บนเครื่องปัจจุบันเพียงที่เดียวโดยไม่มี version control ใดรองรับ และไม่มีสัญญาณใดแจ้งเตือนตามปกติ
+
+**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ repository ภายนอกเพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workbench/` ที่กำลังจะถูก commit เข้า repository ของผู้อื่น
+
+ตรวจเฉพาะไฟล์ที่ยัง pending โดยตั้งใจ ไฟล์ที่ commit ไปแล้วถือเป็นทรัพย์สินของ repository นั้น เช่น AI harness configuration ที่ทีมเจ้าของใช้งานอยู่ ซึ่งไม่ใช่การรั่วไหล
+
+## การค้นหาโค้ดจาก Workspace Root
+
+`rg` และ `fd` เคารพ `.gitignore` โดยปริยาย การค้นหาจาก root จึงเคยคืนผลว่างสำหรับโค้ดที่อยู่ใน `repos/` โดยไม่แจ้ง error ซึ่งอ่านได้ว่า "ไม่มีโค้ดนี้" ทั้งที่มีอยู่
+
+ไฟล์ `.ignore` ที่ workspace root แก้ปัญหานี้ เครื่องมือค้นหาอ่าน `.ignore` ด้วย priority สูงกว่า `.gitignore` ทำให้ค้นจาก root แล้วเห็นเนื้อหาใต้ `repos/` ขณะที่ Git ยังคง ignore เหมือนเดิม
+
+ไฟล์นี้ใช้ `!repos/*` ไม่ใช่ `!repos/**` โดยตั้งใจ เพราะ `**` จะลบล้าง `.gitignore` ภายในแต่ละ repository ด้วย ทำให้ `node_modules`, `dist` และ build artifacts โผล่ขึ้นมาในผลการค้นหา
+
+การค้นหาทำได้จาก root แต่การรันคำสั่งเฉพาะ repository เช่น test, build หรือ Git ยังต้องเปลี่ยน working directory เข้า repository เป้าหมายก่อนเสมอ
 
 ## การสร้าง VS Code Workspace
 
