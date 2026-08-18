@@ -28,6 +28,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 ├── .agents/
 │   └── skills/              # skills ที่เป็นของ root workspace
 ├── workbench/
+│   ├── README.md            # กติกาว่าใครเขียนตรงไหนได้
 │   ├── repositories.yaml    # Repository Catalog instance
 │   └── workspace-contracts/ # shared contracts สำหรับ consumers
 ├── repos/                   # independent Git repositories
@@ -39,6 +40,8 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 เก็บบริบทและเอกสารที่มนุษย์กับ AI ใช้ทำงานร่วมกัน เช่น แผนงาน specification, architecture, research, decisions และ Repository Catalog
 
 ข้อมูลในพื้นที่นี้เป็นของ root workspace และต้องไม่ถูกคัดลอกหรือ commit เข้า external repositories โดยอัตโนมัติ
+
+พื้นที่นี้มีผู้เขียนได้หลายราย แต่ละ harness หรือเครื่องมือเก็บ artifact ของตัวเองไว้ใน namespace ของตัวเองใต้ `workbench/<producer>/` ส่วนไฟล์ระดับ root ของ `workbench/` เป็นของกลางที่ต้องมี contract กติกาทั้งหมดอยู่ใน `workbench/README.md`
 
 ### `repos/`
 

@@ -10,6 +10,8 @@ Workspace นี้แบ่งข้อมูลออกเป็น 2 พื�
 - ตัวอย่าง: แผนงาน, specification, architecture, research, decision record, บันทึกการทำงาน และหลักฐานการประเมิน
 - หากงานเป็นการวิเคราะห์ วางแผน วิจัย หรือจัดทำเอกสารประกอบ และยังไม่ใช่ผลลัพธ์ของ repository ใดโดยตรง ให้จัดเก็บไว้ที่นี่
 - ห้ามเก็บ secrets, access tokens, credentials หรือข้อมูลรับรองตัวตนใน `workbench/`
+- พื้นที่นี้มีผู้เขียนได้หลายราย ให้อ่าน `workbench/README.md` ก่อนสร้างไฟล์ใหม่ในนั้น
+- เขียนได้เฉพาะใน namespace ของตัวเองที่ `workbench/<producer>/` ส่วนไฟล์ระดับ root ของ `workbench/` เป็นของกลางที่ต้องมี contract ก่อน และเมื่อ artifact ต้องอ้าง repository ให้อ้างด้วย `repo_id` ไม่ใช่ path
 
 ## ไฟล์ชั่วคราว
 

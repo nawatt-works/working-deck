@@ -1,0 +1,61 @@
+# Workbench
+
+พื้นที่ทำงานร่วมกันระหว่างผู้ใช้กับ AI และเป็นที่เก็บ artifact ของทุก producer
+ที่ทำงานกับ workspace นี้ เนื้อหาในโฟลเดอร์นี้ถูก commit เข้า root repository
+ต่างจาก `repos/` ที่ถูก ignore
+
+ไฟล์นี้เป็นกติกาว่าใครเขียนตรงไหนได้ ไม่ใช่รายการหมวดหมู่ของเนื้อหา — โครงสร้าง
+ย่อยเกิดขึ้นตอนมี producer เขียนจริง ไม่ได้เตรียมไว้ล่วงหน้า
+
+## โครงสร้าง
+
+```text
+workbench/
+├── README.md              # กติกาของพื้นที่นี้
+├── repositories.yaml      # shared — Repository Catalog
+├── workspace-contracts/   # shared — contract ของไฟล์ที่ใช้ร่วมกัน
+└── <producer>/            # namespace ของแต่ละ producer
+```
+
+## กติกา
+
+### 1. อ่านได้ทุกที่ เขียนได้เฉพาะ namespace ตัวเอง
+
+producer อ่านไฟล์ใดใน `workbench/` ก็ได้ แต่เขียนได้เฉพาะใน `workbench/<ตัวเอง>/`
+ห้ามเขียน สร้าง ลบ หรือแก้ไฟล์ใน namespace ของ producer อื่น
+
+ไฟล์ที่ระดับ `workbench/` root เป็นของกลาง แก้ได้เฉพาะเมื่อผู้ใช้ร้องขอหรือเมื่อ
+ทำตาม workflow ที่ contract ของไฟล์นั้นกำหนดไว้
+
+### 2. ของที่ shared ต้องมี contract
+
+ไฟล์จะขึ้นมาอยู่ระดับ `workbench/` root ได้ก็ต่อเมื่อมี contract และ validator
+ใน `workspace-contracts/` แล้ว ห้าม promote ไฟล์ขึ้นมาเป็นของกลางโดยยังไม่มี
+schema และเครื่องมือตรวจ
+
+ตราบใดที่ยังไม่มี contract ให้เก็บไฟล์นั้นไว้ใน namespace ของ producer เจ้าของ
+ต่อไป การที่ producer อื่นอยากอ่านไฟล์หนึ่งไม่ใช่เหตุผลเพียงพอที่จะย้ายขึ้นมา
+
+### 3. เชื่อมกันด้วย `repo_id` เท่านั้น
+
+เมื่อ artifact ต้องอ้างถึง repository ให้อ้างด้วย `repo_id` จาก
+`repositories.yaml` ห้ามอ้าง path ภายใต้ `repos/` โดยตรง และห้าม producer อ้าง
+path ภายใน namespace ของ producer อื่น
+
+## Producer namespace
+
+- **producer** คือ harness, tool หรือระบบใดก็ตามที่เขียน artifact ลง `workbench/`
+  รวมถึงงานที่ผู้ใช้กับ AI ทำร่วมกันแบบ ad-hoc
+- ตั้งชื่อโฟลเดอร์เป็น kebab-case ที่สื่อว่า producer นั้นคืออะไร
+- สร้าง namespace ตอนที่จะเขียนไฟล์แรกจริง ไม่ต้องสร้างล่วงหน้าหรือสร้างเผื่อ
+- แต่ละ namespace ต้องมี `README.md` ของตัวเองที่บอกว่าใครเป็นเจ้าของ เก็บอะไร
+  และไฟล์ในนั้นมีอายุแบบไหน เพื่อไม่ให้เกิดโฟลเดอร์ที่ไม่มีใครรู้ที่มา
+- โครงสร้างภายใน namespace เป็นเรื่องของ producer นั้นเอง
+
+## ข้อห้าม
+
+- ห้ามเก็บ secrets, access tokens, credentials หรือข้อมูลรับรองตัวตน
+- ห้ามเก็บไฟล์ชั่วคราว ให้ใช้ temporary directory ของ harness หรือระบบแทน
+- ห้ามเก็บ source code ของ repository ใด ตัวงานจริงอยู่ใน `repos/` เท่านั้น
+- ห้ามสร้างโฟลเดอร์หมวดหมู่ทิ้งไว้ว่างๆ เพื่อรอให้มีคนมาเติม
+- ห้ามคัดลอกหรือ commit เนื้อหาในพื้นที่นี้เข้า repository ใต้ `repos/`
