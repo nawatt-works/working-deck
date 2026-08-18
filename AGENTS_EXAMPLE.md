@@ -1,105 +1,120 @@
 # Workspace Guidelines
 
-Workspace นี้แบ่งข้อมูลออกเป็น 2 พื้นที่หลัก ได้แก่ `workbench/` และ `repos/`
-ส่วนไฟล์ที่ root เช่น `.ignore` และ `tooling/` ใช้ควบคุมและดูแล workspace โดยรวม
+This workspace has two primary areas, `workbench/` and `repos/`. Root-level
+files such as `.ignore` and `tooling/` govern and maintain the workspace itself.
 
-## `workbench/` — พื้นที่ทำงานร่วมกัน
+## `workbench/` — shared working area
 
-- ใช้เก็บข้อมูลและเอกสารที่มนุษย์กับ AI ใช้ร่วมกัน แต่ไม่ใช่ source code ของผลิตภัณฑ์
-- ตัวอย่าง: แผนงาน, specification, architecture, research, decision record, บันทึกการทำงาน และหลักฐานการประเมิน
-- หากงานเป็นการวิเคราะห์ วางแผน วิจัย หรือจัดทำเอกสารประกอบ และยังไม่ใช่ผลลัพธ์ของ repository ใดโดยตรง ให้จัดเก็บไว้ที่นี่
-- ห้ามเก็บ secrets, access tokens, credentials หรือข้อมูลรับรองตัวตนใน `workbench/`
-- พื้นที่นี้มีผู้เขียนได้หลายราย ให้อ่าน `workbench/README.md` ก่อนสร้างไฟล์ใหม่ในนั้น
-- เขียนได้เฉพาะใน namespace ของตัวเองที่ `workbench/<producer>/` ส่วนไฟล์ระดับ root ของ `workbench/` เป็นของกลางที่ต้องมี contract ก่อน และเมื่อ artifact ต้องอ้าง repository ให้อ้างด้วย `repo_id` ไม่ใช่ path
+- Holds the information and documents that the user and AI share, but never product source code.
+- Examples: plans, specifications, architecture, research, decision records, working notes, and evaluation evidence.
+- When work is analysis, planning, research, or supporting documentation that is not yet an output of any repository, store it here.
+- Never store secrets, access tokens, credentials, or identity material in `workbench/`.
+- This area has multiple writers. Read `workbench/README.md` before creating a new file in it.
+- Write only inside your own namespace at `workbench/<producer>/`. Files at the root of `workbench/` are shared and require a contract first. When an artifact references a repository, reference it by `repo_id` rather than by path.
 
-## ไฟล์ชั่วคราว
+## Temporary files
 
-- ใช้ temporary directory หรือ scratchpad ที่ harness หรือระบบจัดเตรียมไว้สำหรับไฟล์ชั่วคราวระหว่างทำงาน เช่น cache, logs, extracted files, generated samples และผลลัพธ์ระหว่างทาง
-- workspace นี้ไม่มีโฟลเดอร์กลางสำหรับไฟล์ชั่วคราว ห้ามสร้างขึ้นมาเองและห้ามวางไฟล์ชั่วคราวปนใน `workbench/`, `repos/*` หรือ workspace root
-- ห้ามเขียนไฟล์นอก workspace ในตำแหน่งที่ไม่ใช่ temporary directory ของ harness หรือระบบ เว้นแต่ผู้ใช้อนุญาตอย่างชัดเจน
-- แยกไฟล์ของแต่ละงานไว้ในโฟลเดอร์ย่อยที่สื่อความหมาย เพื่อลดการชนกันและทำให้ตรวจสอบหรือลบภายหลังได้ง่าย
-- ก่อนลบหรือเขียนทับไฟล์ที่มีอยู่ ให้ตรวจสอบก่อนว่าไม่ได้เป็นข้อมูลของผู้ใช้หรืองานอื่น
-- เมื่อผลลัพธ์กลายเป็น decision, reusable evidence หรือ checkpoint ที่ต้องเก็บถาวร ให้สรุปหรือย้ายเฉพาะส่วนที่จำเป็นไป `workbench/`
-- เมื่อผลลัพธ์ชั่วคราวเป็นสิ่งที่ผู้ใช้ต้องตรวจสอบ ให้แจ้งตำแหน่งไฟล์นั้นเสมอ
-- ห้ามเก็บ secrets, access tokens, credentials หรือข้อมูลรับรองตัวตนในไฟล์ชั่วคราว
+- Use the temporary directory or scratchpad that the harness or the system provides for work-in-progress files such as caches, logs, extracted files, generated samples, and intermediate output.
+- This workspace has no central folder for temporary files. Do not create one, and do not leave temporary files inside `workbench/`, `repos/*`, or the workspace root.
+- Do not write outside the workspace anywhere other than the harness or system temporary directory, unless the user explicitly allows it.
+- Keep each task's files in a meaningful subdirectory so they do not collide and can be reviewed or deleted later.
+- Before deleting or overwriting an existing file, confirm it does not belong to the user or to other work.
+- When a result becomes a decision, reusable evidence, or a checkpoint worth keeping, summarize or move only what is needed into `workbench/`.
+- When a temporary result is something the user must review, always tell them where the file is.
+- Never store secrets, access tokens, credentials, or identity material in temporary files.
 
-## `repos/` — External repositories
+## `repos/` — external repositories
 
-- ใช้เก็บ checkout ของ Git repositories ที่เป็นตัวงานจริงหรือสนับสนุนการทำงาน เช่น backend, frontend, API, consumer, worker, library, infrastructure, documentation, test environment, agent skill, extension หรือ automation
-- แต่ละโฟลเดอร์ระดับแรกภายใต้ `repos/` โดยปกติต้องเป็น Git repository อิสระจาก root workspace และอาจเป็น repository ที่บุคคลหรือทีมภายนอกเป็นเจ้าของ
-- repository ภายใต้ `repos/` อาจเป็น single-project repository หรือ monorepo ที่ประกอบด้วยหลาย applications, services, packages หรือ libraries ก็ได้
-- ห้ามอนุมานโครงสร้างภายใน repository จากตำแหน่งที่อยู่ใต้ `repos/` ให้ตรวจ configuration, documentation และคำแนะนำของ repository เป้าหมายก่อนทำงานเสมอ
-- ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workbench/repositories.yaml`
-- คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ cataloged repository
-- `workbench/repositories.yaml` เป็น authoritative Repository Catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace
-- `repos/` ต้องมีเฉพาะ workspace repositories ดังนั้น direct child directory ทุกแห่งใต้ `repos/` ต้องมีรายการใน Repository Catalog หากพบ directory ที่ไม่มีรายการ ให้ถือว่า Catalog drift และเพิ่มเข้า catalog
-- cataloged repository อาจยังไม่มี checkout บนเครื่องปัจจุบันได้ ให้แจ้ง warning และห้ามลบรายการออกจาก Catalog โดยอัตโนมัติเพียงเพราะ directory ไม่มีอยู่
-- การอยู่ใน Repository Catalog ไม่ได้ให้สิทธิ์ AI อ่าน เขียน หรือ execute repository ไม่ได้บังคับให้ codebase knowledge index repository และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code
-- repository ที่เป็น test environment, documentation, agent skill, extension, fixture หรือ automation สามารถอยู่ใน catalog ได้แม้ไม่ต้องถูก codebase knowledge index
-- `repos/*` ถูก ignore จาก root Git repository ห้ามสมมติว่า root workspace และ repositories เหล่านี้รวมกันเป็น monorepo หรือใช้ Git history, branch, staging area, dependencies หรือ tooling ร่วมกัน ทั้งนี้ repository แต่ละแห่งอาจเป็น monorepo ภายในขอบเขตของตัวเองได้
-- repository ที่มี `.git` ของตัวเองต้องถูก root ignore เสมอ หาก commit เข้า root จะกลายเป็น gitlink ที่ clone แล้วได้โฟลเดอร์ว่าง
-- โฟลเดอร์ใต้ `repos/` ที่ไม่มี `.git` ของตัวเอง ต้อง opt-in ด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore` ไม่งั้นงานจะไม่ถูก track ทั้งใน root และในตัวมันเอง
-- ตรวจสถานะทุก repository ด้วย `python3 tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
-- ก่อนเรียก Git command หรือเครื่องมือเฉพาะ repository เช่น test runner หรือ build ให้เปลี่ยน working directory เข้า repository เป้าหมายก่อน
-- การค้นหาโค้ดทำได้จาก workspace root โดยตรง ไฟล์ `.ignore` ที่ root ทำให้ `rg` และ `fd` มองเห็นเนื้อหาใต้ `repos/` แม้ Git จะยัง ignore อยู่ ห้ามแก้หรือลบไฟล์นี้เพราะจะทำให้การค้นหาที่ root คืนผลว่างโดยไม่มี error
-- หากใช้เครื่องมือค้นหาที่ไม่อ่าน `.ignore` ให้ค้นภายใน repository เป้าหมายแทน ห้ามสรุปว่าโค้ดไม่มีอยู่จากผลการค้นหาที่ว่างเปล่า
-- การแก้ไขแต่ละ repository ต้องจำกัดเฉพาะงานที่ผู้ใช้ร้องขอ และต้องปฏิบัติต่อ repository อื่นเป็นขอบเขตอิสระ
-- ห้าม commit secrets หรือ credentials ส่วน credential files ที่จำเป็นต่อ local development ต้องเป็นรูปแบบที่ repository นั้นอนุญาตและถูก ignore จาก Git
+- Holds checkouts of the Git repositories that are the real work or that support it, such as backend, frontend, API, consumer, worker, library, infrastructure, documentation, test environment, agent skill, extension, or automation.
+- Each first-level directory under `repos/` is normally a Git repository independent of the root workspace, and may be owned by an external person or team.
+- A repository under `repos/` may be a single-project repository or a monorepo containing several applications, services, packages, or libraries.
+- Never infer a repository's internal structure from the fact that it sits under `repos/`. Always check the target repository's configuration, documentation, and guidance before working in it.
+- In this workspace's documents, **workspace repository** or **repo** means a direct child directory under `repos/`, normally a Git checkout. **Cataloged repository** means a repo listed in `workbench/repositories.yaml`.
+- The word repository as it appears inside source code — the repository pattern, a data repository, `Repository<T>`, or a class ending in `Repository` — is a concept internal to the work and is neither a workspace repository nor a cataloged repository.
+- `workbench/repositories.yaml` is the authoritative Repository Catalog of every repository that belongs to this project workspace.
+- `repos/` must contain only workspace repositories, so every direct child directory under it must have a catalog entry. Treat a directory without one as catalog drift and add it.
+- A cataloged repository may have no checkout on the current machine. Emit a warning, and never remove a catalog entry automatically merely because the directory is absent.
+- Catalog membership does not grant the AI read, write, or execute permission, does not require codebase knowledge to index the repository, and does not imply the repository is application source code.
+- A repository that is a test environment, documentation, agent skill, extension, fixture, or automation may be cataloged even when codebase knowledge never indexes it.
+- `repos/*` is ignored by the root Git repository. Never assume the root workspace and these repositories form one monorepo or share Git history, branches, a staging area, dependencies, or tooling. Each repository may still be a monorepo within its own boundary.
+- A repository with its own `.git` must always stay ignored by the root. Committing it into the root produces a gitlink that clones as an empty directory.
+- A directory under `repos/` without its own `.git` must opt in with `!repos/<directory>/` in `.gitignore`, otherwise its work is tracked neither in the root nor in itself.
+- Check every repository with `python3 tooling/repos_status.py` before committing inside an external repository, and when finishing work that touched several repositories.
+- Before running a Git command or a repository-specific tool such as a test runner or a build, change the working directory into the target repository.
+- Searching for code works directly from the workspace root. The root `.ignore` file lets `rg` and `fd` see content under `repos/` even though Git still ignores it. Never edit or delete that file; without it, searches from the root return empty results with no error.
+- When using a search tool that does not read `.ignore`, search inside the target repository instead. Never conclude that code does not exist from an empty search result.
+- Keep each repository's changes limited to what the user asked for, and treat every other repository as an independent boundary.
+- Never commit secrets or credentials. Credential files needed for local development must use a form the repository permits and must be ignored by Git.
 
-## AI Harness Isolation
+## AI harness isolation
 
-- root workspace เป็นพื้นที่ coordination ระหว่างผู้ใช้กับ AI ส่วน `repos/*` เป็น external repositories
-- ไฟล์และโฟลเดอร์สำหรับการทำงานร่วมกันระหว่างผู้ใช้กับ AI ของ workspace นี้ต้องเก็บไว้ใน root workspace, `workbench/` หรือตำแหน่งที่ root workspace กำหนดเท่านั้น
-- ห้ามเพิ่ม คัดลอก หรือ generate AI harness configuration ของ workspace นี้ลงใน `repos/*` เว้นแต่ผู้ใช้สั่งให้เปลี่ยน repository นั้นโดยตรง
-- ตัวอย่างไฟล์ที่ห้ามเพิ่มโดยไม่ได้รับคำสั่งอย่างชัดเจน ได้แก่ `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ configuration ที่มีวัตถุประสงค์ใกล้เคียงกัน
-- AI harness configuration ที่มีอยู่แล้วภายใน `repos/*` ถือเป็นไฟล์ของ external repository ห้ามแก้ไข ลบ เปลี่ยนชื่อ หรือเขียนทับ เว้นแต่ผู้ใช้ร้องขอการเปลี่ยนแปลงไฟล์นั้นโดยตรง
-- ห้ามตั้งใจนำ AI harness configuration ภายใน `repos/*` มาใช้เป็น coordination configuration ของ root workspace การป้องกันไม่ให้ provider โหลดไฟล์เหล่านั้นโดยอัตโนมัติต้องจัดการแยกตาม provider
-- ห้ามนำ notes, plans, prompts, evaluation evidence, handoff records หรือ coordination artifacts ส่วนตัวไปเก็บหรือ commit ภายใน `repos/*`
-- ก่อน commit ภายใน repository ใด ให้ตรวจสอบว่าไม่มี artifact ของ root workspace หรือ AI harness configuration ที่เกิดขึ้นโดยไม่ตั้งใจรวมอยู่ใน change set
+- The root workspace is the coordination area between the user and the AI; `repos/*` holds external repositories.
+- Files and directories used for user-AI collaboration in this workspace belong only in the root workspace, in `workbench/`, or in a location the root workspace defines.
+- Never add, copy, or generate this workspace's AI harness configuration into `repos/*` unless the user asks for a change to that repository directly.
+- Files that must not be added without an explicit instruction include `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, and configuration serving a similar purpose.
+- AI harness configuration that already exists inside `repos/*` belongs to that external repository. Never edit, delete, rename, or overwrite it unless the user asks for a change to that file directly.
+- Never deliberately adopt AI harness configuration found inside `repos/*` as coordination configuration for the root workspace. Preventing a provider from loading those files automatically must be handled per provider.
+- Never store or commit private notes, plans, prompts, evaluation evidence, handoff records, or coordination artifacts inside `repos/*`.
+- Before committing inside any repository, verify that no root workspace artifact or AI harness configuration has entered the change set unintentionally.
 
-## Workspace Tooling
+## Workspace tooling
 
-- `tooling/` ใช้เก็บ automation ที่ดูแล root workspace และไม่ใช่ source code ของ repository ใดภายใต้ `repos/`
-- `workbench/workspace-contracts/repository-catalog/` เป็น workspace-level contract ของ Repository Catalog ส่วน Software Factory, Codebase Knowledge และระบบอื่นเป็น consumers ที่เท่าเทียมกัน
-- `workbench/repositories.yaml` เป็น source of truth สำหรับ cataloged repositories โดยใช้ `schema_version: 1` และแต่ละรายการมีเฉพาะ stable `repo_id` รูปแบบ `repo_<snake_case_name>` กับ `path` ที่เป็น direct child ใต้ `repos/`
-- access policy, indexing configuration, integration mapping และ generated knowledge ต้องเก็บแยกจาก Repository Catalog และอ้าง repository ด้วย `repo_id`
-- tool-specific configuration ต้องเป็นผู้เลือกว่าจะใช้หรือไม่ใช้ cataloged repository ใด ห้ามใช้การลบ repository ออกจาก Catalog เพื่อควบคุม access, indexing หรือ behavior ของเครื่องมือ
-- เมื่อแก้ `workbench/repositories.yaml` ให้ validate ด้วย `python3 tooling/validate_repository_catalog.py` แล้วตรวจสถานะทุก repository ด้วย `python3 tooling/repos_status.py`
-- workspace tooling ห้ามเขียนไฟล์ลงใน `repos/*` เว้นแต่คำสั่งนั้นมีวัตถุประสงค์เพื่อแก้ตัวงานใน repository และผู้ใช้ร้องขออย่างชัดเจน
+- `tooling/` holds automation that maintains the root workspace and is not source code of any repository under `repos/`.
+- `workbench/workspace-contracts/repository-catalog/` is the workspace-level contract for the Repository Catalog. Software Factory, Codebase Knowledge, and other systems are equal consumers.
+- `workbench/repositories.yaml` is the source of truth for cataloged repositories. It uses `schema_version: 1`, and each entry carries only a stable `repo_id` matching `repo_<snake_case_name>` and a `path` that is a direct child of `repos/`.
+- Access policy, indexing configuration, integration mapping, and generated knowledge live outside the Repository Catalog and reference repositories by `repo_id`.
+- Tool-specific configuration decides which cataloged repositories it uses. Never remove a repository from the Catalog to control access, indexing, or a tool's behavior.
+- After editing `workbench/repositories.yaml`, validate with `python3 tooling/validate_repository_catalog.py`, then check every repository with `python3 tooling/repos_status.py`.
+- Workspace tooling must not write files into `repos/*` unless the command's purpose is to change the work inside that repository and the user asked for it explicitly.
 
-## หลักการเลือกตำแหน่งไฟล์
+## Choosing where a file belongs
 
-- เอกสารสำหรับการคิดและการทำงานร่วมกัน → `workbench/`
-- source code, committed tests, reusable fixtures, configuration และ repository-owned build artifacts → `repos/<repository-name>/`
-- ไฟล์ชั่วคราว การทดลอง generated fixtures และผลลัพธ์ระหว่างทาง → temporary directory ของ harness หรือระบบ ไม่ใช่ `workbench/` หรือ `repos/*`
-- root workspace automation → `tooling/`
-- build artifacts ภายใน repository ให้อยู่ในตำแหน่งมาตรฐานของ repository และต้องไม่ถูก commit เว้นแต่ repository ระบุไว้เป็นอย่างอื่น
-- อย่าวาง source code ของ repository ไว้ที่ workspace root, `workbench/` หรือ `tooling/`
+- Documents for thinking and collaboration → `workbench/`
+- Source code, committed tests, reusable fixtures, configuration, and repository-owned build artifacts → `repos/<repository-name>/`
+- Temporary files, experiments, generated fixtures, and intermediate output → the harness or system temporary directory, never `workbench/` or `repos/*`
+- Root workspace automation → `tooling/`
+- Build artifacts inside a repository belong in that repository's standard location and must not be committed unless the repository says otherwise.
+- Never place a repository's source code at the workspace root, in `workbench/`, or in `tooling/`.
 
-## Git Workflow
+## Git workflow
 
-ก่อน push หรือเปลี่ยน upstream ของ root workspace หรือ repository ใต้ `repos/` ให้อ่านและปฏิบัติตาม `GIT_POLICY.md` รวมถึง instructions ที่เฉพาะเจาะจงกว่าของ repository เป้าหมาย
+Before pushing or changing an upstream in the root workspace or in a repository
+under `repos/`, read and follow `GIT_POLICY.md` along with any more specific
+instructions belonging to the target repository.
 
-### Repository Classes
+### Repository classes
 
-`GIT_POLICY.md` กำหนดกฎของแต่ละ class ส่วนตารางนี้กำหนดว่า repository ใดอยู่ class ใด และเป็นส่วนที่ต่างกันไปในแต่ละ project
+`GIT_POLICY.md` defines the rules for each class. This table records which
+repository belongs to which class, and is the part that differs per project.
 
-- default class ของ repository ใต้ `repos/` — `client`
-- root workspace repository — `own`
+- Default class for repositories under `repos/` — `client`
+- Root workspace repository — `own`
 
-| repo_id | class | หมายเหตุ |
+| repo_id | class | notes |
 | --- | --- | --- |
-| _(ยังไม่มี repository ที่ต่างจาก default)_ | | |
+| _(no repository differs from the default yet)_ | | |
 
-repository ที่ไม่มีในตารางนี้ใช้ default class เสมอ ดังนั้น repository ใหม่ที่ยังไม่ถูกจัดประเภทจะถูกห้าม push ไว้ก่อน
+A repository absent from this table always uses the default class, so a newly
+added repository is push-protected until someone classifies it.
 
-ก่อน merge feature branch เข้า integration branch ของ repository เป้าหมาย ให้ตรวจสอบ workflow และคำแนะนำของ repository นั้นก่อน ห้ามใช้ Git workflow ของ root workspace ครอบ external repositories โดยอัตโนมัติ
+Before merging a feature branch into a target repository's integration branch,
+check that repository's own workflow and guidance. Never apply the root
+workspace's Git workflow to external repositories automatically.
 
-## ภาษา
+## Language
 
-- ใช้ภาษาไทยเป็นภาษาเริ่มต้นในการพูดคุยกับผู้ใช้
-- เอกสาร เนื้อหา และข้อความสำหรับมนุษย์ที่ AI สร้างขึ้นต้องใช้ภาษาไทยเป็นหลัก
-- ชื่อเฉพาะ ศัพท์เทคนิค identifiers, source code, commands และข้อความที่ต้องตรงกับระบบ สามารถคงภาษาเดิมไว้ได้
-- executable contracts เช่น prompts, skills, schemas, exact labels, test expectations และข้อความที่ต้องรักษา model หรือ tool compatibility สามารถใช้ภาษาอังกฤษหรือภาษาที่เหมาะกับ runtime ได้
-- historical artifacts, regression evidence และข้อความที่ต้องคงรูปเพื่อ trace หรือเปรียบเทียบผล ไม่ต้องแปลย้อนหลัง
-- หากผู้ใช้ระบุภาษาอื่นอย่างชัดเจน ให้ปฏิบัติตามภาษาที่ผู้ใช้ร้องขอสำหรับงานนั้น
+These are two separate choices. The language of this file does not determine
+the language the AI uses when speaking with the user.
+
+**Speaking with the user, and human-facing output**
+
+- Use Thai by default when speaking with the user.
+- Documents, content, and human-facing text that the AI produces are primarily in Thai.
+- Proper nouns, technical terms, identifiers, source code, commands, and text that must match a system may stay in their original language.
+- When the user explicitly asks for another language, follow the requested language for that work.
+
+**Instruction and contract files in this workspace**
+
+- Files that instruct the AI — this file, `GIT_POLICY.md`, and every `SKILL.md` — are written in English for model and tool compatibility.
+- Files that explain the workspace to people, such as `README.md`, follow the human-facing rule above.
+- Historical artifacts, regression evidence, and text that must keep its exact form for tracing or comparison are never retranslated.

@@ -17,13 +17,13 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
 2. Read `AGENTS_EXAMPLE.md`, `README.md`, and `GIT_POLICY.md` before writing anything.
 3. Ask the user for the project posture. Keep it to these questions and offer the stated default:
    - Project name.
-   - Language for conversation and generated human-facing documents; default Thai.
+   - Language for conversation and human-facing output such as `README.md`; default Thai. Instruction files stay in English regardless of this answer, so do not ask about them.
    - Default repository class for repositories under `repos/`; default `client`.
    - Whether the root workspace repository may be pushed to a remote; default yes, class `own`.
    - Whether repositories in this project usually carry their own Git checkout or are usually plain directories tracked by the root repository; default their own Git checkout.
 4. Rename `AGENTS_EXAMPLE.md` to `AGENTS.md` with `git mv` so the project keeps exactly one instruction file.
 5. Fill the Repository Classes section in `AGENTS.md` with the answers. Record the default class and the root workspace class. Leave the per-repository table empty when no repository differs from the default.
-6. Adjust the language section of `AGENTS.md` when the user chose a language other than the starter default.
+6. Adjust only the human-facing half of the Language section in `AGENTS.md` when the user chose a language other than the starter default. Leave the instruction-file half unchanged, and do not translate `AGENTS.md`, `GIT_POLICY.md`, or any `SKILL.md`.
 7. Leave `workbench/repositories.yaml` as `repositories: []` unless repositories already exist under `repos/`. If they do, stop and tell the user to run `$add-workspace-repository` for each one rather than cataloging them here.
 8. Verify the result by running, from the workspace root:
    - `python3 tooling/validate_repository_catalog.py`
@@ -38,4 +38,5 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
 - Do not create, edit, delete, or rename files under `repos/*`.
 - Do not add AI harness configuration to any repository under `repos/`.
 - Do not delete `GIT_POLICY.md` or rewrite its per-class rules; only the classification in `AGENTS.md` is project-specific.
+- Do not translate instruction or contract files into the conversation language. They are English for model and tool compatibility, which is independent of how the AI speaks to the user.
 - Ask rather than guess when an answer is missing; never assume a repository is `own`.

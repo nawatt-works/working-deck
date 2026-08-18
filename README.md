@@ -189,6 +189,15 @@ python3 tooling/repos_status.py
 
 รายละเอียด policy ฉบับร่างอยู่ใน `AGENTS_EXAMPLE.md`
 
+## ภาษาของไฟล์ใน Workspace
+
+workspace แยกภาษาออกเป็นสองเรื่องที่ไม่เกี่ยวกัน
+
+- **ไฟล์ที่เป็นคำสั่งให้ AI** — `AGENTS.md`, `GIT_POLICY.md` และ `SKILL.md` ทุกไฟล์ ใช้ภาษาอังกฤษเพื่อ model และ tool compatibility
+- **ไฟล์ที่อธิบาย workspace ให้คน** — `README.md` และเอกสารที่ AI สร้างให้ผู้ใช้ ใช้ภาษาไทยเป็นหลัก
+
+ภาษาของไฟล์คำสั่งไม่ได้กำหนดภาษาที่ AI ใช้คุยกับผู้ใช้ ค่าเริ่มต้นของการสนทนายังเป็นภาษาไทย และ `$bootstrap-project-workspace` ถามเฉพาะภาษาฝั่งที่คุยกับคนเท่านั้น ไม่แปลไฟล์คำสั่ง
+
 Git push safety policy อยู่ใน `GIT_POLICY.md` และถูกอ้างจาก workspace instructions เพื่อให้ AI อ่านก่อนทำ remote write
 
 `GIT_POLICY.md` แบ่ง repository เป็น class — `own` คือ repository ของผู้ใช้ซึ่ง push ได้ตามปกติ ส่วน `client` คือ repository ของผู้อื่นซึ่งห้าม push ทุกกรณี repository ที่ยังไม่ถูกจัดประเภทถือเป็น `client` เสมอ
