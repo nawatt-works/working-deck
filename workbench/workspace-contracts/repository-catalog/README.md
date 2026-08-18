@@ -1,6 +1,6 @@
 # Repository Catalog Contract
 
-Contract นี้กำหนดรูปแบบและความหมายของ `.workbench/repositories.yaml` สำหรับ
+Contract นี้กำหนดรูปแบบและความหมายของ `workbench/repositories.yaml` สำหรับ
 Project Workspace ที่สร้างจาก Working Deck โดยไม่ผูกกับ consumer ใด consumer หนึ่ง
 
 ## Ownership

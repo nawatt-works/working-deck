@@ -1,6 +1,6 @@
 ---
 name: manage-repository-catalog
-description: Create, inspect, reconcile, and update the authoritative Repository Catalog at `.workbench/repositories.yaml`. Use when asked to discover or sync direct child directories under `repos/`, create a missing catalog, add or remove workspace repositories, resolve catalog drift, or update stable `repo_id` identities or checkout paths. Catalog membership does not grant AI access, require codebase indexing, or describe integrations. Do not use merely to regenerate `.code-workspace` from an unchanged catalog.
+description: Create, inspect, reconcile, and update the authoritative Repository Catalog at `workbench/repositories.yaml`. Use when asked to discover or sync direct child directories under `repos/`, create a missing catalog, add or remove workspace repositories, resolve catalog drift, or update stable `repo_id` identities or checkout paths. Catalog membership does not grant AI access, require codebase indexing, or describe integrations. Do not use merely to regenerate `.code-workspace` from an unchanged catalog.
 ---
 
 # Manage Repository Catalog
@@ -10,7 +10,7 @@ Maintain the canonical inventory of repositories known to the project workspace.
 ## Terminology
 
 - Call each direct child directory under `repos/` a **workspace repository** or **repo**. Expect it to be a Git checkout, but catalog a non-Git directory too and emit a warning.
-- Call a repo listed in `.workbench/repositories.yaml` a **cataloged repository**.
+- Call a repo listed in `workbench/repositories.yaml` a **cataloged repository**.
 - Do not confuse a workspace repository with repository-pattern classes or data repositories inside source code.
 
 ## Schema

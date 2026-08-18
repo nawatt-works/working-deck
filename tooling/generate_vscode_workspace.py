@@ -27,7 +27,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CATALOG = ROOT / ".workbench" / "repositories.yaml"
+DEFAULT_CATALOG = ROOT / "workbench" / "repositories.yaml"
 DEFAULT_OUTPUT = ROOT / ".code-workspace"
 
 

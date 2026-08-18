@@ -1,5 +1,4 @@
 .DS_Store
-.runtime/*
-!.runtime/.gitkeep
 repos/*
 !repos/.gitkeep
+__pycache__/

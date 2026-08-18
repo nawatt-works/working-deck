@@ -11,7 +11,7 @@ Working Deck เป็น workspace starter สำหรับนำโครง
 1. คัดลอกไฟล์และโฟลเดอร์ของ Working Deck ที่ต้องใช้ไปยัง project ใหม่ โดยไม่เอา `.git` และไฟล์ local ที่ไม่เกี่ยวข้องไปด้วย
 2. เปลี่ยนชื่อ `AGENTS_EXAMPLE.md` เป็น `AGENTS.md` เพื่อเปิดใช้ workspace instructions กับ AI harness ที่รองรับ
 3. นำ Git repositories ของ project ไปไว้เป็น direct child ใต้ `repos/`
-4. ใช้ `$manage-repository-catalog` หรือแก้ `.workbench/repositories.yaml` ให้ register repositories ทั้งหมด
+4. ใช้ `$manage-repository-catalog` หรือแก้ `workbench/repositories.yaml` ให้ register repositories ทั้งหมด
 5. รัน `python3 tooling/validate_repository_catalog.py`
 6. รัน `python3 tooling/generate_vscode_workspace.py` แล้วเปิด `.code-workspace`
 
@@ -21,29 +21,24 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 
 ```text
 .
-├── AGENTS_EXAMPLE.md             # ร่างแนวทางการทำงานของ workspace
-├── GIT_STRATEGY_FOR_AI.md        # Git push และ upstream safety policy
+├── AGENTS_EXAMPLE.md        # ร่างแนวทางการทำงานของ workspace
+├── GIT_STRATEGY_FOR_AI.md   # Git push และ upstream safety policy
 ├── README.md
-├── .code-workspace               # generated VS Code multi-root workspace
+├── .code-workspace          # generated VS Code multi-root workspace
 ├── .agents/
-│   └── skills/                   # skills ที่เป็นของ root workspace
-├── .workbench/
-│   ├── repositories.yaml         # Repository Catalog instance
-│   └── workspace-contracts/      # shared contracts สำหรับ consumers
-├── .runtime/                     # temporary files และผลลัพธ์ระหว่างทาง
-├── repos/                         # independent Git repositories
-└── tooling/                       # automation สำหรับดูแล root workspace
+│   └── skills/              # skills ที่เป็นของ root workspace
+├── workbench/
+│   ├── repositories.yaml    # Repository Catalog instance
+│   └── workspace-contracts/ # shared contracts สำหรับ consumers
+├── repos/                   # independent Git repositories
+└── tooling/                 # automation สำหรับดูแล root workspace
 ```
 
-### `.workbench/`
+### `workbench/`
 
 เก็บบริบทและเอกสารที่มนุษย์กับ AI ใช้ทำงานร่วมกัน เช่น แผนงาน specification, architecture, research, decisions และ Repository Catalog
 
 ข้อมูลในพื้นที่นี้เป็นของ root workspace และต้องไม่ถูกคัดลอกหรือ commit เข้า external repositories โดยอัตโนมัติ
-
-### `.runtime/`
-
-เก็บไฟล์ชั่วคราว เช่น logs, extracted files, generated samples และผลลัพธ์ระหว่างทาง ไฟล์ในพื้นที่นี้ไม่ใช่ deliverable ฉบับสุดท้ายและถูก ignore จาก Git ยกเว้น `.gitkeep`
 
 ### `repos/`
 
@@ -53,7 +48,7 @@ repository แต่ละแห่งอาจเป็น single-project repos
 
 root Git repository ignore เนื้อหาภายใต้ `repos/` เพื่อป้องกันไม่ให้ source code หรือการเปลี่ยนแปลงของ external repository ถูก commit ปะปนกับ coordination workspace การตั้งค่านี้ไม่ได้ห้าม repository แต่ละแห่งเป็น monorepo ภายในขอบเขตของตัวเอง
 
-ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout หากยังไม่ใช่ Git repository ให้ถือเป็นข้อยกเว้นและแสดง warning ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `.workbench/repositories.yaml`
+ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout หากยังไม่ใช่ Git repository ให้ถือเป็นข้อยกเว้นและแสดง warning ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workbench/repositories.yaml`
 
 คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ cataloged repository
 
@@ -67,7 +62,7 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 ## Repository Catalog
 
-ไฟล์ `.workbench/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
+ไฟล์ `workbench/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
 
 ```yaml
 schema_version: 1
@@ -85,7 +80,7 @@ repositories:
 
 schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่
 
-นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `.workbench/workspace-contracts/repository-catalog/` ซึ่งเป็น workspace infrastructure ไม่ได้เป็นของ VS Code generator, Software Factory หรือ Codebase Knowledge
+นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workbench/workspace-contracts/repository-catalog/` ซึ่งเป็น workspace infrastructure ไม่ได้เป็นของ VS Code generator, Software Factory หรือ Codebase Knowledge
 
 หากยังไม่มี cataloged repository ให้ใช้ `repositories: []` ซึ่งเป็น catalog ที่ถูกต้อง
 
@@ -134,7 +129,7 @@ code .code-workspace
 
 ไฟล์ `.code-workspace` เป็น derived editor configuration ที่สร้างจาก Repository Catalog เพื่อแก้ปัญหา VS Code ซึ่งเปิดจาก root workspace แล้วอาจไม่ค้นพบหรือ index repositories ใต้ `repos/` เพราะ directory นี้ถูก root Git repository ignore
 
-ไฟล์ `.code-workspace` ถูก commit ได้ แต่ไม่ควรแก้รายการ folders ด้วยมือ หากข้อมูลไม่ถูกต้องให้แก้ `.workbench/repositories.yaml` หรือ generator แล้วสร้างไฟล์ใหม่
+ไฟล์ `.code-workspace` ถูก commit ได้ แต่ไม่ควรแก้รายการ folders ด้วยมือ หากข้อมูลไม่ถูกต้องให้แก้ `workbench/repositories.yaml` หรือ generator แล้วสร้างไฟล์ใหม่
 
 generator จะรวม cataloged repositories ทุกแห่งไว้ใน `.code-workspace` โดยไม่พิจารณา access หรือ indexing policy จะแจ้ง warning เมื่อ directory ใน catalog ยังไม่มีอยู่เพื่อรองรับกรณีที่ยังไม่ได้ clone และจะหยุดด้วย error เมื่อพบ direct child ใต้ `repos/` ที่ยังไม่มีใน Catalog
 
@@ -168,9 +163,9 @@ python3 -m unittest discover -s tooling/tests
 
 ## แนวทางการทำงาน
 
-1. ตรวจ `.workbench/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
+1. ตรวจ `workbench/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
 2. เปลี่ยน working directory เข้า repository นั้นก่อนเรียก Git หรือเครื่องมือเฉพาะโครงการ
-3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `.workbench/` หรือ `.runtime/` ตามอายุของข้อมูล
+3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `workbench/` ส่วนไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
 4. ตรวจ Git status ภายใน repository เป้าหมายก่อน commit
 5. ตรวจว่าไม่มี coordination artifacts ของ root workspace ปะปนอยู่ใน change set ของ external repository
 
