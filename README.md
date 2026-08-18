@@ -11,7 +11,7 @@ Working Deck เป็น workspace starter สำหรับนำโครง
 1. คัดลอกไฟล์และโฟลเดอร์ของ Working Deck ที่ต้องใช้ไปยัง project ใหม่ โดยไม่เอา `.git` และไฟล์ local ที่ไม่เกี่ยวข้องไปด้วย
 2. ใช้ `$bootstrap-project-workspace` ตอบคำถามเกี่ยวกับ project แล้ว skill จะเปลี่ยน `AGENTS_EXAMPLE.md` เป็น `AGENTS.md` พร้อมบันทึก default repository class
 3. ใช้ `$add-workspace-repository` ทีละ repository เมื่อมี repository เข้ามา ทั้งตอนเริ่มและระหว่างพัฒนา
-4. ตรวจผลด้วย `python3 tooling/repos_status.py` แล้วเปิด `.code-workspace`
+4. ตรวจผลด้วย `python3 tooling/repos_status.py`
 
 ขั้นที่ 2 เก็บเฉพาะ posture ของ project ไม่ใช่รายชื่อ repository เพราะตอนเริ่มมักยังไม่รู้ว่าจะมี repository อะไรบ้าง และ repository จะทยอยเพิ่มระหว่างพัฒนา
 
@@ -24,7 +24,6 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 ├── AGENTS_EXAMPLE.md        # ร่างแนวทางการทำงานของ workspace
 ├── GIT_POLICY.md            # Git push safety policy แยกตาม repository class
 ├── README.md
-├── .code-workspace          # generated VS Code multi-root workspace
 ├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
 ├── .agents/
 │   └── skills/              # skills ที่เป็นของ root workspace
@@ -63,7 +62,6 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 เก็บ automation ที่ดูแล root workspace เครื่องมือในพื้นที่นี้ต้องไม่เขียนไฟล์ลง `repos/*` เว้นแต่ผู้ใช้ร้องขอให้แก้ตัวงานใน repository นั้นอย่างชัดเจน
 
 - `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
-- `generate_vscode_workspace.py` เป็น consumer ที่สร้าง `.code-workspace` จาก Catalog ที่ผ่าน validation
 - `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ repository ภายนอก
 - `repository_catalog.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
 
@@ -87,7 +85,7 @@ repositories:
 
 schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่
 
-นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workbench/workspace-contracts/repository-catalog/` ซึ่งเป็น workspace infrastructure ไม่ได้เป็นของ VS Code generator, Software Factory หรือ Codebase Knowledge
+นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workbench/workspace-contracts/repository-catalog/` ซึ่งเป็น workspace infrastructure ไม่ได้เป็นของ Software Factory หรือ Codebase Knowledge
 
 หากยังไม่มี cataloged repository ให้ใช้ `repositories: []` ซึ่งเป็น catalog ที่ถูกต้อง
 
@@ -107,6 +105,20 @@ schema version 1 รองรับเฉพาะ `repo_id` และ `path` �
 - `codebase-knowledge/` — generated knowledge ราย repository และ project-level knowledge ที่ประกอบขึ้นภายหลัง
 
 ชื่อและ schema ของไฟล์เหล่านี้ยังต้องออกแบบแยกต่างหาก ห้ามเพิ่ม fields ดังกล่าวเข้า `repositories.yaml` ล่วงหน้า
+
+## การตรวจสอบ Workspace
+
+ตรวจ Repository Catalog ตาม contract โดยไม่ผูกกับ consumer ใด:
+
+```bash
+python3 tooling/validate_repository_catalog.py
+```
+
+รัน automated tests ของ contract และ tooling:
+
+```bash
+python3 -m unittest discover -s tooling/tests
+```
 
 ## การติดตามสถานะ Repositories
 
@@ -143,44 +155,6 @@ python3 tooling/repos_status.py
 
 การค้นหาทำได้จาก root แต่การรันคำสั่งเฉพาะ repository เช่น test, build หรือ Git ยังต้องเปลี่ยน working directory เข้า repository เป้าหมายก่อนเสมอ
 
-## การสร้าง VS Code Workspace
-
-ตรวจ Repository Catalog โดยไม่ผูกกับ consumer ใด:
-
-```bash
-python3 tooling/validate_repository_catalog.py
-```
-
-รันคำสั่งนี้จาก workspace root:
-
-```bash
-python3 tooling/generate_vscode_workspace.py
-```
-
-ตรวจว่า `.code-workspace` ตรงกับ catalog โดยไม่เขียนไฟล์:
-
-```bash
-python3 tooling/generate_vscode_workspace.py --check
-```
-
-เปิด multi-root workspace:
-
-```bash
-code .code-workspace
-```
-
-ไฟล์ `.code-workspace` เป็น derived editor configuration ที่สร้างจาก Repository Catalog เพื่อแก้ปัญหา VS Code ซึ่งเปิดจาก root workspace แล้วอาจไม่ค้นพบหรือ index repositories ใต้ `repos/` เพราะ directory นี้ถูก root Git repository ignore
-
-ไฟล์ `.code-workspace` ถูก commit ได้ แต่ไม่ควรแก้รายการ folders ด้วยมือ หากข้อมูลไม่ถูกต้องให้แก้ `workbench/repositories.yaml` หรือ generator แล้วสร้างไฟล์ใหม่
-
-generator จะรวม cataloged repositories ทุกแห่งไว้ใน `.code-workspace` โดยไม่พิจารณา access หรือ indexing policy จะแจ้ง warning เมื่อ directory ใน catalog ยังไม่มีอยู่เพื่อรองรับกรณีที่ยังไม่ได้ clone และจะหยุดด้วย error เมื่อพบ direct child ใต้ `repos/` ที่ยังไม่มีใน Catalog
-
-รัน automated tests ของ contract และ tooling:
-
-```bash
-python3 -m unittest discover -s tooling/tests
-```
-
 ## AI Harness Isolation
 
 ไฟล์สำหรับ coordination กับ AI เช่น `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, prompts, plans และ evaluation artifacts ต้องอยู่ใน root workspace เท่านั้น
@@ -191,12 +165,11 @@ python3 -m unittest discover -s tooling/tests
 
 ## Skills สำหรับ Repository Workspace
 
-แยก workflow เป็นสี่ skills โดยสองตัวแรกเป็น workflow ที่ผู้ใช้เรียกโดยตรง ส่วนสองตัวหลังเป็นขั้นตอนย่อยที่ถูกเรียกต่อ
+แยก workflow เป็นสาม skills โดยสองตัวแรกเป็น workflow ที่ผู้ใช้เรียกโดยตรง ส่วนตัวสุดท้ายเป็นขั้นตอนย่อยที่ถูกเรียกต่อ
 
 - `bootstrap-project-workspace` ใช้ครั้งเดียวต่อ project หลังคัดลอก starter เพื่อถามข้อมูลของ project แล้ว generate `AGENTS.md` พร้อม default repository class
-- `add-workspace-repository` ใช้ทุกครั้งที่เพิ่ม repository เพื่อจัดการ `.gitignore`, repository class, catalog และ `.code-workspace` ให้สอดคล้องกันในคราวเดียว
+- `add-workspace-repository` ใช้ทุกครั้งที่เพิ่ม repository เพื่อจัดการ `.gitignore`, repository class และ catalog ให้สอดคล้องกันในคราวเดียว
 - `manage-repository-catalog` ใช้ค้นหาและ sync direct child repositories รวมถึงสร้าง เพิ่ม ลบ หรือแก้ authoritative Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
-- `generate-vscode-workspace` ใช้อ่าน catalog ที่มีอยู่แล้วเพื่อสร้างและตรวจ `.code-workspace` เท่านั้น
 
 ตัวอย่างคำขอ:
 
@@ -204,7 +177,6 @@ python3 -m unittest discover -s tooling/tests
 ใช้ $bootstrap-project-workspace ตั้งค่า workspace สำหรับ project นี้
 ใช้ $add-workspace-repository เพิ่ม order-api เข้า workspace
 ใช้ $manage-repository-catalog sync catalog กับ repos/ ที่มีอยู่
-ใช้ $generate-vscode-workspace สร้าง VS Code workspace จาก catalog ล่าสุด
 ```
 
 ## แนวทางการทำงาน

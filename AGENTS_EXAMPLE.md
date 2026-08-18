@@ -1,8 +1,7 @@
 # Workspace Guidelines
 
 Workspace นี้แบ่งข้อมูลออกเป็น 2 พื้นที่หลัก ได้แก่ `workbench/` และ `repos/`
-ส่วนไฟล์ที่ root เช่น `.code-workspace` และ `tooling/` ใช้ควบคุมและดูแล workspace
-โดยรวม
+ส่วนไฟล์ที่ root เช่น `.ignore` และ `tooling/` ใช้ควบคุมและดูแล workspace โดยรวม
 
 ## `workbench/` — พื้นที่ทำงานร่วมกัน
 
@@ -61,12 +60,11 @@ Workspace นี้แบ่งข้อมูลออกเป็น 2 พื�
 ## Workspace Tooling
 
 - `tooling/` ใช้เก็บ automation ที่ดูแล root workspace และไม่ใช่ source code ของ repository ใดภายใต้ `repos/`
-- `workbench/workspace-contracts/repository-catalog/` เป็น workspace-level contract ของ Repository Catalog ส่วน Software Factory, Codebase Knowledge, VS Code generator และระบบอื่นเป็น consumers ที่เท่าเทียมกัน
+- `workbench/workspace-contracts/repository-catalog/` เป็น workspace-level contract ของ Repository Catalog ส่วน Software Factory, Codebase Knowledge และระบบอื่นเป็น consumers ที่เท่าเทียมกัน
 - `workbench/repositories.yaml` เป็น source of truth สำหรับ cataloged repositories โดยใช้ `schema_version: 1` และแต่ละรายการมีเฉพาะ stable `repo_id` รูปแบบ `repo_<snake_case_name>` กับ `path` ที่เป็น direct child ใต้ `repos/`
 - access policy, indexing configuration, integration mapping และ generated knowledge ต้องเก็บแยกจาก Repository Catalog และอ้าง repository ด้วย `repo_id`
 - tool-specific configuration ต้องเป็นผู้เลือกว่าจะใช้หรือไม่ใช้ cataloged repository ใด ห้ามใช้การลบ repository ออกจาก Catalog เพื่อควบคุม access, indexing หรือ behavior ของเครื่องมือ
-- `.code-workspace` เป็น generated และ committed editor projection ที่รวม cataloged repositories ทุกแห่ง เพื่อให้ VS Code ที่เปิดจาก root workspace ค้นพบ repositories ใต้ `repos/` ซึ่งถูก root Git repository ignore
-- เมื่อแก้ `workbench/repositories.yaml` ให้ validate ด้วย `python3 tooling/validate_repository_catalog.py` จากนั้น generate `.code-workspace` ใหม่ด้วย `python3 tooling/generate_vscode_workspace.py` และตรวจความสอดคล้องด้วย `python3 tooling/generate_vscode_workspace.py --check`
+- เมื่อแก้ `workbench/repositories.yaml` ให้ validate ด้วย `python3 tooling/validate_repository_catalog.py` แล้วตรวจสถานะทุก repository ด้วย `python3 tooling/repos_status.py`
 - workspace tooling ห้ามเขียนไฟล์ลงใน `repos/*` เว้นแต่คำสั่งนั้นมีวัตถุประสงค์เพื่อแก้ตัวงานใน repository และผู้ใช้ร้องขออย่างชัดเจน
 
 ## หลักการเลือกตำแหน่งไฟล์

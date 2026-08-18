@@ -1,6 +1,6 @@
 ---
 name: add-workspace-repository
-description: Onboard one repository into the workspace end to end — place it under `repos/`, set its Git tracking mode in `.gitignore`, classify it as `own` or `client` in `AGENTS.md`, register it in the Repository Catalog, and regenerate the VS Code workspace. Use when adding, cloning, or adopting a repository, or when `repos_status.py` reports a `gitlink` or `untracked` state. Do not use merely to edit the catalog, which `$manage-repository-catalog` owns.
+description: Onboard one repository into the workspace end to end — place it under `repos/`, set its Git tracking mode in `.gitignore`, classify it as `own` or `client` in `AGENTS.md`, and register it in the Repository Catalog. Use when adding, cloning, or adopting a repository, or when `repos_status.py` reports a `gitlink` or `untracked` state. Do not use merely to edit the catalog, which `$manage-repository-catalog` owns.
 ---
 
 # Add Workspace Repository
@@ -24,9 +24,8 @@ The other two combinations are errors that `python3 tooling/repos_status.py` rep
 4. For an internal repository, add `!repos/<directory>/` to the opt-in block in `.gitignore`. For an external repository, make sure no such line exists for it.
 5. Ask for the repository class when it is not obvious, and state the project default in the question. Add a row to the Repository Classes table in `AGENTS.md` only when the class differs from the default; leave the table untouched otherwise.
 6. Use `$manage-repository-catalog` to add the catalog entry. Do not hand-edit `workbench/repositories.yaml` in this skill.
-7. Use `$generate-vscode-workspace` to regenerate `.code-workspace`.
-8. Run `python3 tooling/repos_status.py` and confirm the new repository reports `external` or `internal` with no errors.
-9. Report the resulting mode, class, `repo_id`, and any warning that remains.
+7. Run `python3 tooling/repos_status.py` and confirm the new repository reports `external` or `internal` with no errors.
+8. Report the resulting mode, class, `repo_id`, and any warning that remains.
 
 ## Constraints
 

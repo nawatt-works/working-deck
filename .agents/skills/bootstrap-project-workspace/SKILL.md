@@ -28,7 +28,6 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
 8. Verify the result by running, from the workspace root:
    - `python3 tooling/validate_repository_catalog.py`
    - `python3 tooling/repos_status.py`
-   - `python3 tooling/generate_vscode_workspace.py`
 9. Report what was generated, the recorded defaults, and that repositories are added later with `$add-workspace-repository`.
 
 ## Constraints

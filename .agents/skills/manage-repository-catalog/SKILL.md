@@ -1,6 +1,6 @@
 ---
 name: manage-repository-catalog
-description: Create, inspect, reconcile, and update the authoritative Repository Catalog at `workbench/repositories.yaml`. Use when asked to discover or sync direct child directories under `repos/`, create a missing catalog, add or remove workspace repositories, resolve catalog drift, or update stable `repo_id` identities or checkout paths. Catalog membership does not grant AI access, require codebase indexing, or describe integrations. Do not use merely to regenerate `.code-workspace` from an unchanged catalog.
+description: Create, inspect, reconcile, and update the authoritative Repository Catalog at `workbench/repositories.yaml`. Use when asked to discover or sync direct child directories under `repos/`, create a missing catalog, add or remove workspace repositories, resolve catalog drift, or update stable `repo_id` identities or checkout paths. Catalog membership does not grant AI access, require codebase indexing, or describe integrations.
 ---
 
 # Manage Repository Catalog
@@ -47,7 +47,7 @@ repositories:
 5. Preserve catalog entries whose checkout is missing on the current machine. Remove or rename an entry only when the user requests that change explicitly.
 6. Write schema version 1 while preserving unaffected entries and their order. Append newly discovered entries in deterministic path order unless the user specifies an order.
 7. Validate the workspace-owned contract, identities, paths, uniqueness, direct-child scope, complete direct-child coverage, and Git-checkout warnings with `python3 tooling/validate_repository_catalog.py`.
-8. After the catalog is valid, use `$generate-vscode-workspace` to regenerate and check `.code-workspace`.
+8. After the catalog is valid, run `python3 tooling/repos_status.py` to confirm every repository is in a correct tracking state.
 
 ## Constraints
 

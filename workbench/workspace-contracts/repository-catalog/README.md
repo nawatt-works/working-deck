@@ -7,7 +7,7 @@ Project Workspace ที่สร้างจาก Working Deck โดยไม
 
 - Project Workspace เป็นเจ้าของ Catalog instance ของตัวเอง
 - Working Deck เป็นเจ้าของ contract version, validation rules และ conventions
-- Software Factory, Codebase Knowledge, VS Code workspace generator และระบบอื่นเป็น consumers ที่เท่าเทียมกัน
+- Software Factory, Codebase Knowledge และระบบอื่นเป็น consumers ที่เท่าเทียมกัน
 - Consumer ต้องเก็บ configuration, artifacts และ lifecycle ของตัวเองแยกจาก Catalog แล้วอ้าง repository ด้วย `repo_id`
 
 ## Version 1
