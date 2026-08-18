@@ -80,7 +80,20 @@ Workspace นี้แบ่งข้อมูลออกเป็น 2 พื�
 
 ## Git Workflow
 
-ก่อน push หรือเปลี่ยน upstream ของ root workspace หรือ repository ใต้ `repos/` ให้อ่านและปฏิบัติตาม `GIT_STRATEGY_FOR_AI.md` รวมถึง instructions ที่เฉพาะเจาะจงกว่าของ repository เป้าหมาย
+ก่อน push หรือเปลี่ยน upstream ของ root workspace หรือ repository ใต้ `repos/` ให้อ่านและปฏิบัติตาม `GIT_POLICY.md` รวมถึง instructions ที่เฉพาะเจาะจงกว่าของ repository เป้าหมาย
+
+### Repository Classes
+
+`GIT_POLICY.md` กำหนดกฎของแต่ละ class ส่วนตารางนี้กำหนดว่า repository ใดอยู่ class ใด และเป็นส่วนที่ต่างกันไปในแต่ละ project
+
+- default class ของ repository ใต้ `repos/` — `client`
+- root workspace repository — `own`
+
+| repo_id | class | หมายเหตุ |
+| --- | --- | --- |
+| _(ยังไม่มี repository ที่ต่างจาก default)_ | | |
+
+repository ที่ไม่มีในตารางนี้ใช้ default class เสมอ ดังนั้น repository ใหม่ที่ยังไม่ถูกจัดประเภทจะถูกห้าม push ไว้ก่อน
 
 ก่อน merge feature branch เข้า integration branch ของ repository เป้าหมาย ให้ตรวจสอบ workflow และคำแนะนำของ repository นั้นก่อน ห้ามใช้ Git workflow ของ root workspace ครอบ external repositories โดยอัตโนมัติ
 

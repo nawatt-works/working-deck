@@ -22,7 +22,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 ```text
 .
 ├── AGENTS_EXAMPLE.md        # ร่างแนวทางการทำงานของ workspace
-├── GIT_STRATEGY_FOR_AI.md   # Git push และ upstream safety policy
+├── GIT_POLICY.md            # Git push safety policy แยกตาม repository class
 ├── README.md
 ├── .code-workspace          # generated VS Code multi-root workspace
 ├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
@@ -213,7 +213,11 @@ python3 -m unittest discover -s tooling/tests
 
 รายละเอียด policy ฉบับร่างอยู่ใน `AGENTS_EXAMPLE.md`
 
-Git push และ upstream safety policy อยู่ใน `GIT_STRATEGY_FOR_AI.md` และถูกอ้างจาก workspace instructions เพื่อให้ AI อ่านก่อนทำ remote write
+Git push safety policy อยู่ใน `GIT_POLICY.md` และถูกอ้างจาก workspace instructions เพื่อให้ AI อ่านก่อนทำ remote write
+
+`GIT_POLICY.md` แบ่ง repository เป็น class — `own` คือ repository ของผู้ใช้ซึ่ง push ได้ตามปกติ ส่วน `client` คือ repository ของผู้อื่นซึ่งห้าม push ทุกกรณี repository ที่ยังไม่ถูกจัดประเภทถือเป็น `client` เสมอ
+
+กฎแยกตาม class อยู่ใน `GIT_POLICY.md` ซึ่งเหมือนกันทุก project ส่วนตารางว่า repository ใดอยู่ class ใดอยู่ใน `AGENTS.md` ที่ root เพราะเป็นข้อมูลเฉพาะ project และเป็นที่เดียวที่เขียนได้โดยไม่ละเมิดกฎ AI harness isolation ซึ่งห้ามเพิ่ม instruction files ลงใน `repos/*`
 
 ## สิ่งที่จะออกแบบเพิ่มเติม
 

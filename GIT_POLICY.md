@@ -1,30 +1,49 @@
-# Global Git Upstream Safety
+# Git Policy
 
-These rules apply to every Git repository. Their purpose is to prevent
-unintended or destructive remote writes, and a local branch from accidentally
-pushing to a differently named remote branch.
+These rules apply to every Git repository reachable from this workspace,
+including the root workspace itself and every repository under `repos/`. Their
+purpose is to prevent unintended or destructive remote writes, to keep a local
+branch from pushing to a differently named remote branch, and to keep this
+workspace's coordination artifacts out of repositories owned by other people.
 
-## Default restriction for remote pushes
+## Repository classes
 
-- By default, do not push any ref (branch or tag) to any Git remote.
-- Fetching or pulling from remotes is allowed; this restriction applies only to
-  push operations.
-- A repository-level or more specific `AGENTS.md`/`AGENTS.override.md` may
-  explicitly allow remote pushes for that project. The permission must be
-  written in project guidance; the existence of a remote, an upstream, or a
-  general request to "push" is not by itself an override.
-- A project override should state the permission explicitly and may limit it to
-  named remotes, for example:
+Every repository belongs to exactly one class. The root `AGENTS.md` declares the
+project's default class and lists any repository that differs, keyed by
+`repo_id`. Classification lives in the root `AGENTS.md` because the AI harness
+isolation rules forbid adding instruction files inside `repos/*`.
 
-  ```md
-  ## Git Push Override
+- `own` — the user owns this repository. Ordinary pushes are allowed.
+- `client` — someone else owns this repository. Never push any ref.
 
-  - Codex may push to Git remotes in this project.
-  ```
+When a repository's class is unknown or undeclared, treat it as `client`. A new
+repository that nobody has classified yet is therefore push-protected by
+default.
 
-- An override allowing ordinary pushes does not disable the branch/upstream
-  name-matching checks below, and does not by itself permit force pushes or ref
-  deletion — those require the separate, explicit permission described next.
+The root workspace repository is `own` unless the project states otherwise.
+
+## Remote pushes
+
+- Fetching and pulling are always allowed. Every restriction here applies only
+  to operations that write to a remote.
+- Do not push any ref (branch or tag) to any remote of a `client` repository.
+  The existence of a remote, a configured upstream, write access, or a general
+  request to "push" is not permission.
+- For an `own` repository, ordinary pushes are allowed and still must pass every
+  check in this document.
+- Permission to push never implies permission to force-push or delete refs —
+  those require the separate, explicit permission described next.
+
+## Keep this workspace out of other people's repositories
+
+- Never commit or push this workspace's coordination artifacts into a repository
+  under `repos/`, regardless of class. This includes `AGENTS.md`, `CLAUDE.md`,
+  `.agents/`, `.claude/`, and anything from `workbench/`.
+- Run `python3 tooling/repos_status.py` before committing inside a repository
+  under `repos/`. It reports pending coordination artifacts that would otherwise
+  reach someone else's history.
+- Inspect the staged change set before every commit in a repository you do not
+  own, and confirm every path belongs to the task the user asked for.
 
 ## Force pushes and ref deletion require separate permission
 
@@ -32,18 +51,16 @@ pushing to a differently named remote branch.
   remote ref deletion (`--delete`, or a refspec such as
   `:refs/heads/<branch>` / `:refs/tags/<tag>`) are destructive, history-altering
   operations. A plain push override does not grant either.
-- These require their own explicit statement in project guidance, and may be
+- These require their own explicit statement in the root `AGENTS.md`, and may be
   scoped narrowly, for example:
 
   ```md
-  ## Git Push Override
-
-  - Codex may push to Git remotes in this project.
-  - Codex may force-push to `feature/*` branches only.
+  - `repo_internal_tools` may be force-pushed on `feature/*` branches only.
   ```
 
 - Without that separate statement, treat force push and remote ref deletion as
-  prohibited even when ordinary pushes are allowed.
+  prohibited even for an `own` repository whose ordinary pushes are allowed.
+- Never force-push or delete a ref in a `client` repository.
 - Never use a force push to resolve a rejected push (e.g. a non-fast-forward
   error). Stop and report the conflict instead of overriding it.
 
@@ -133,11 +150,14 @@ pushing to a differently named remote branch.
 
 ## Scope
 
-- These rules do not globally prohibit work on or pushes to `main`, `master`,
-  or another branch after project guidance explicitly allows remote pushes and
-  that repository's workflow and the user's request allow the specific push.
-- Without a project-level override, remote pushes remain prohibited regardless
-  of the target branch or remote name.
-- When an override exists, branch-name mismatches, relying on a mismatched
-  upstream as a push destination, and unscoped force pushes or ref deletion all
-  remain prohibited unless separately and explicitly granted.
+- These rules do not prohibit work on or pushes to `main`, `master`, or another
+  branch in an `own` repository, provided that repository's own workflow and the
+  user's request allow the specific push.
+- For a `client` repository, remote pushes remain prohibited regardless of the
+  target branch, the remote name, or the access the credentials happen to grant.
+- Branch-name mismatches, relying on a mismatched upstream as a push
+  destination, and unscoped force pushes or ref deletion remain prohibited in
+  every class unless separately and explicitly granted.
+- A repository under `repos/` may carry its own contributing guide or workflow
+  documentation. Follow it in addition to this policy; where they conflict, stop
+  and ask the user rather than choosing one.
