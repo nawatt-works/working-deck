@@ -181,11 +181,16 @@ def find_uncataloged_paths(
 def repository_warnings(
     workspace_root: Path, repositories: list[dict[str, str]]
 ) -> list[str]:
+    """Return catalog-level warnings about cataloged repositories.
+
+    รายงานเฉพาะเรื่องสมาชิกภาพของ Catalog เท่านั้น ส่วนการมีหรือไม่มี .git เป็น
+    tracking mode ซึ่ง repos_status.py เป็นเจ้าของ เพราะการตัดสินว่าถูกหรือผิด
+    ต้องดู opt-in ใน .gitignore ประกอบด้วย directory ที่ไม่มี .git แล้ว opt-in
+    ไว้เป็น internal repository ที่ถูกต้อง ไม่ใช่ข้อยกเว้น
+    """
     warnings: list[str] = []
     for repository in repositories:
         repository_path = workspace_root / repository["path"]
         if not repository_path.is_dir():
             warnings.append(f"repository directory not found: {repository_path}")
-        elif not (repository_path / ".git").exists():
-            warnings.append(f"cataloged path is not a Git checkout: {repository_path}")
     return warnings

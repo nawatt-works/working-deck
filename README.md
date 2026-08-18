@@ -2,7 +2,7 @@
 
 Workspace สำหรับทำงานร่วมกันระหว่างมนุษย์กับ AI บนหลาย Git repositories โดยแยกข้อมูลสำหรับ coordination ออกจาก source code ของแต่ละ repository อย่างชัดเจน
 
-root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน บริบท เอกสาร เครื่องมือ และ configuration ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` และยังคงเป็น Git repository อิสระจาก root workspace
+root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน บริบท เอกสาร เครื่องมือ และ configuration ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` ซึ่งส่วนใหญ่เป็น Git repository อิสระจาก root workspace แต่บางโฟลเดอร์อาจถูก track ไปกับ root ได้
 
 Working Deck เป็น workspace starter สำหรับนำโครงสร้างและไฟล์ที่จำเป็นไปใช้เป็นฐานของ project อื่น ไม่ใช่ application project
 
@@ -15,13 +15,39 @@ Working Deck เป็น workspace starter สำหรับนำโครง
 
 ขั้นที่ 2 เก็บเฉพาะ posture ของ project ไม่ใช่รายชื่อ repository เพราะตอนเริ่มมักยังไม่รู้ว่าจะมี repository อะไรบ้าง และ repository จะทยอยเพิ่มระหว่างพัฒนา
 
-Catalog ใน starter เริ่มด้วย `repositories: []` ส่วนตัวอย่าง schema อยู่ในเอกสารและ skill เพื่อไม่ให้ AI เข้าใจ mock repository ว่าเป็นสมาชิกจริงของ project ใหม่
+Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่งเป็นค่าที่ถูกต้อง ส่วนตัวอย่าง schema อยู่ในเอกสารและ skill เพื่อไม่ให้ AI เข้าใจ mock repository ว่าเป็นสมาชิกจริงของ project ใหม่
+
+## Skills
+
+แยก workflow เป็นสาม skills โดยสองตัวแรกเป็น workflow ที่ผู้ใช้เรียกโดยตรง ส่วนตัวสุดท้ายเป็นขั้นตอนย่อยที่ถูกเรียกต่อ
+
+- `bootstrap-project-workspace` ใช้ครั้งเดียวต่อ project หลังคัดลอก starter เพื่อถามข้อมูลของ project แล้ว generate `AGENTS.md` พร้อม default repository class
+- `add-workspace-repository` ใช้ทุกครั้งที่เพิ่ม repository เพื่อจัดการ `.gitignore`, repository class และ catalog ให้สอดคล้องกันในคราวเดียว
+- `manage-repository-catalog` ใช้ค้นหาและ sync direct child repositories รวมถึงสร้าง เพิ่ม ลบ หรือแก้ authoritative Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
+
+ตัวอย่างคำขอ:
+
+```text
+ใช้ $bootstrap-project-workspace ตั้งค่า workspace สำหรับ project นี้
+ใช้ $add-workspace-repository เพิ่ม order-api เข้า workspace
+ใช้ $manage-repository-catalog sync catalog กับ repos/ ที่มีอยู่
+```
+
+## แนวทางการทำงานประจำวัน
+
+1. ตรวจ `workbench/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
+2. ค้นหาโค้ดจาก workspace root ได้โดยตรง แต่ต้องเปลี่ยน working directory เข้า repository ก่อนเรียก Git, test runner หรือ build
+3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `workbench/` ส่วนไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
+4. ตรวจ Git status ภายใน repository เป้าหมายก่อน commit
+5. รัน `python3 tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
+
+แนวทางฉบับเต็มที่ AI อ่านอยู่ใน `AGENTS_EXAMPLE.md` ซึ่งจะกลายเป็น `AGENTS.md` หลัง bootstrap
 
 ## โครงสร้าง Workspace
 
 ```text
 .
-├── AGENTS_EXAMPLE.md        # ร่างแนวทางการทำงานของ workspace
+├── AGENTS_EXAMPLE.md        # template ของ workspace instructions
 ├── GIT_POLICY.md            # Git push safety policy แยกตาม repository class
 ├── README.md
 ├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
@@ -31,7 +57,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 │   ├── README.md            # กติกาว่าใครเขียนตรงไหนได้
 │   ├── repositories.yaml    # Repository Catalog instance
 │   └── workspace-contracts/ # shared contracts สำหรับ consumers
-├── repos/                   # independent Git repositories
+├── repos/                   # workspace repositories
 └── tooling/                 # automation สำหรับดูแล root workspace
 ```
 
@@ -45,15 +71,15 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ส่ว�
 
 ### `repos/`
 
-เก็บ checkout ของ Git repositories ที่เป็นตัวงานจริงหรือสนับสนุนการทำงาน เช่น application, library, documentation, test environment, agent skill, extension หรือ automation แต่ละโฟลเดอร์ระดับแรกภายใต้ `repos/` ควรเป็น Git repository อิสระเท่าที่ทำได้ และอาจเป็น repository ของลูกค้า ทีมภายนอก หรือผู้ใช้เอง
+เก็บ Git repositories ที่เป็นตัวงานจริงหรือสนับสนุนการทำงาน เช่น application, library, documentation, test environment, agent skill, extension หรือ automation และอาจเป็น repository ของลูกค้า ทีมภายนอก หรือผู้ใช้เอง
 
 repository แต่ละแห่งอาจเป็น single-project repository หรือ monorepo ที่มีหลาย applications, services, packages หรือ libraries อยู่ภายในก็ได้ การอยู่ใต้ `repos/` บอกเพียง Git boundary ระดับ workspace ไม่ได้บอกรูปแบบโครงสร้างภายใน repository ดังนั้นต้องตรวจ configuration และ documentation ของ repository เป้าหมายก่อนทำงานเสมอ
 
-root Git repository ignore เนื้อหาภายใต้ `repos/` เป็นค่าเริ่มต้น เพื่อไม่ให้ repository ที่มี `.git` ของตัวเองถูก commit เข้า root ซึ่งจะกลายเป็น gitlink ที่ clone แล้วได้โฟลเดอร์ว่าง การตั้งค่านี้ไม่ได้ห้าม repository แต่ละแห่งเป็น monorepo ภายในขอบเขตของตัวเอง
+root Git repository ignore เนื้อหาภายใต้ `repos/` เป็นค่าเริ่มต้น เพื่อไม่ให้ repository ที่มี `.git` ของตัวเองถูก commit เข้า root ซึ่งจะกลายเป็น gitlink ที่ clone แล้วได้โฟลเดอร์ว่าง
 
-บาง project มีโฟลเดอร์ใต้ `repos/` ที่ไม่จำเป็นต้องมี Git ของตัวเองและควรถูก commit ไปกับ root workspace กรณีนี้ให้ opt-in ทีละรายการด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore`
+บาง project มีโฟลเดอร์ใต้ `repos/` ที่ไม่มี Git ของตัวเองและควรถูก commit ไปกับ root workspace กรณีนี้ให้ opt-in ทีละรายการด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore` ทั้งสองแบบเป็นสถานะที่ถูกต้อง รายละเอียดอยู่ในหัวข้อการติดตามสถานะ
 
-ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ซึ่งโดยปกติควรเป็น Git checkout หากยังไม่ใช่ Git repository ให้ถือเป็นข้อยกเว้นและแสดง warning ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workbench/repositories.yaml`
+ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workbench/repositories.yaml`
 
 คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ cataloged repository
 
@@ -83,42 +109,14 @@ repositories:
 - `repo_id` — stable identity ที่ไม่ซ้ำในรูปแบบ `repo_<snake_case_name>` สำหรับให้ไฟล์อื่นอ้างอิง
 - `path` — relative path ที่ไม่ซ้ำและต้องเป็น direct child ภายใต้ `repos/`
 
-schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่
+schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่ นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workbench/workspace-contracts/repository-catalog/`
 
-นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workbench/workspace-contracts/repository-catalog/` ซึ่งเป็น workspace infrastructure ไม่ได้เป็นของ Software Factory หรือ Codebase Knowledge
+Catalog ดูแลเรื่องสมาชิกภาพอย่างเดียว ไม่ตัดสินว่า repository นั้นมี Git ของตัวเองหรือไม่ AI มีสิทธิ์เข้าถึงแค่ไหน ต้องถูก index หรือไม่ หรือเป็น application source code หรือเปล่า repository ที่เป็น test environment, documentation, agent skill หรือ extension จึงอยู่ใน catalog ได้
 
-หากยังไม่มี cataloged repository ให้ใช้ `repositories: []` ซึ่งเป็น catalog ที่ถูกต้อง
+กฎสองข้อที่ตรงข้ามกันและต้องแยกให้ออก:
 
-การอยู่ใน catalog ไม่ได้หมายความว่า AI มีสิทธิ์อ่าน แก้ไข หรือ execute repository นั้น และไม่ได้หมายความว่า repository นั้นต้องเป็น application source code ตัวอย่างเช่น repository ที่เป็น test environment, documentation, agent skill หรือ extension สามารถอยู่ใน catalog ได้
-
-`repos/` มีไว้สำหรับ repositories ที่เป็นสมาชิกของ project workspace เท่านั้น ดังนั้น direct child directory ทุกแห่งใต้ `repos/` ต้องมีรายการใน catalog ไม่ว่าจะเป็น application source code, documentation, test environment, agent skill, extension หรือ automation หากพบ directory ที่ไม่มีรายการ ให้ถือว่า Catalog drift และเพิ่มเข้า catalog
-
-ในทางกลับกัน cataloged repository อาจยังไม่มี checkout บนเครื่องปัจจุบันได้ เช่น ยังไม่ได้ clone เครื่องมือจะแจ้ง warning แต่ห้ามลบรายการนั้นโดยอัตโนมัติ เพราะ Catalog อธิบาย project workspace ไม่ใช่เฉพาะสิ่งที่มีอยู่บนเครื่องหนึ่งเครื่อง
-
-## ข้อมูลที่แยกจาก Repository Catalog
-
-ข้อมูลที่มี lifecycle หรือหน้าที่ต่างจาก catalog ต้องอยู่คนละไฟล์และอ้าง repository ด้วย `repo_id` แต่ละเครื่องมือจึงเลือกใช้ repository subset ของตัวเองได้โดยไม่ทำให้ Catalog ขาดสมาชิก ตัวอย่างชั้นข้อมูลที่อาจเพิ่มในอนาคต:
-
-- `ai-access-policy.yaml` — AI อ่าน เขียน หรือ execute repository ใดได้
-- `codebase-knowledge.yaml` — repository ใดต้อง index และใช้เครื่องมือหรือ configuration ใด
-- `integrations.yaml` — HTTP calls, events, queues, packages หรือ dependencies ที่ตรวจพบเชื่อมไปยัง repository หรือ external system ใด
-- `codebase-knowledge/` — generated knowledge ราย repository และ project-level knowledge ที่ประกอบขึ้นภายหลัง
-
-ชื่อและ schema ของไฟล์เหล่านี้ยังต้องออกแบบแยกต่างหาก ห้ามเพิ่ม fields ดังกล่าวเข้า `repositories.yaml` ล่วงหน้า
-
-## การตรวจสอบ Workspace
-
-ตรวจ Repository Catalog ตาม contract โดยไม่ผูกกับ consumer ใด:
-
-```bash
-python3 tooling/validate_repository_catalog.py
-```
-
-รัน automated tests ของ contract และ tooling:
-
-```bash
-python3 -m unittest discover -s tooling/tests
-```
+- `repos/` มีไว้สำหรับสมาชิกของ project workspace เท่านั้น **direct child directory ทุกแห่งต้องมีรายการใน catalog** หากพบ directory ที่ไม่มีรายการ ให้ถือว่า Catalog drift และเพิ่มเข้า catalog
+- **cataloged repository อาจยังไม่มี checkout บนเครื่องปัจจุบันได้** เช่น ยังไม่ได้ clone เครื่องมือจะแจ้ง warning แต่ห้ามลบรายการนั้นโดยอัตโนมัติ เพราะ Catalog อธิบาย project workspace ไม่ใช่เฉพาะสิ่งที่มีอยู่บนเครื่องหนึ่งเครื่อง
 
 ## การติดตามสถานะ Repositories
 
@@ -141,6 +139,8 @@ python3 tooling/repos_status.py
 
 สถานะ `untracked` เป็นเหตุผลหลักที่ต้องมีเครื่องมือนี้ เพราะโฟลเดอร์ที่ไม่มี Git ของตัวเองและถูก root ignore คืองานที่มีอยู่บนเครื่องปัจจุบันเพียงที่เดียวโดยไม่มี version control ใดรองรับ และไม่มีสัญญาณใดแจ้งเตือนตามปกติ
 
+การตัดสิน tracking state เป็นหน้าที่ของเครื่องมือนี้เท่านั้น เพราะต้องดู `.gitignore` ประกอบด้วย `validate_repository_catalog.py` จึงไม่ตัดสินเรื่องนี้และไม่เตือนเมื่อ repository ไม่มี `.git`
+
 **coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ repository ภายนอกเพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workbench/` ที่กำลังจะถูก commit เข้า repository ของผู้อื่น
 
 ตรวจเฉพาะไฟล์ที่ยัง pending โดยตั้งใจ ไฟล์ที่ commit ไปแล้วถือเป็นทรัพย์สินของ repository นั้น เช่น AI harness configuration ที่ทีมเจ้าของใช้งานอยู่ ซึ่งไม่ใช่การรั่วไหล
@@ -155,39 +155,29 @@ python3 tooling/repos_status.py
 
 การค้นหาทำได้จาก root แต่การรันคำสั่งเฉพาะ repository เช่น test, build หรือ Git ยังต้องเปลี่ยน working directory เข้า repository เป้าหมายก่อนเสมอ
 
+## Git Policy
+
+`GIT_POLICY.md` เก็บกฎความปลอดภัยตอนเขียนขึ้น remote และถูกอ้างจาก workspace instructions เพื่อให้ AI อ่านก่อนทำ remote write
+
+repository ถูกแบ่งเป็น class:
+
+- `own` — repository ของผู้ใช้ push ได้ตามปกติ
+- `client` — repository ของผู้อื่น ห้าม push ทุกกรณี
+- repository ที่ยังไม่ถูกจัดประเภทถือเป็น `client` เสมอ repository ใหม่จึงถูกป้องกันไว้ก่อนโดยไม่ต้องพึ่งความจำ
+
+กฎของแต่ละ class อยู่ใน `GIT_POLICY.md` ซึ่งเหมือนกันทุก project ส่วนตารางว่า repository ใดอยู่ class ใดอยู่ใน `AGENTS.md` ที่ root เพราะเป็นข้อมูลเฉพาะ project และเป็นที่เดียวที่เขียนได้โดยไม่ละเมิดกฎ AI harness isolation ซึ่งห้ามเพิ่ม instruction files ลงใน `repos/*`
+
+การอนุญาตให้ push ไม่ได้รวมถึง force push หรือการลบ ref ซึ่งต้องระบุอนุญาตแยกต่างหาก
+
 ## AI Harness Isolation
 
 ไฟล์สำหรับ coordination กับ AI เช่น `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, prompts, plans และ evaluation artifacts ต้องอยู่ใน root workspace เท่านั้น
 
 ห้ามเพิ่ม แก้ไข หรือลบ AI harness configuration ภายใน `repos/*` เว้นแต่ผู้ใช้ร้องขอการเปลี่ยนแปลงไฟล์นั้นโดยตรง ไฟล์ configuration ที่มีอยู่ใน external repository ถือเป็นทรัพย์สินและส่วนหนึ่งของ workflow ของเจ้าของ repository
 
-ข้อกำหนดใน workspace สามารถป้องกันการสร้างหรือแก้ไฟล์โดยตั้งใจได้ แต่ไม่รับประกันว่า AI harness ทุก provider จะไม่ค้นพบหรือโหลด nested configuration การควบคุม instruction discovery ต้องตั้งค่าแยกตาม provider
+**ข้อจำกัดที่ต้องยอมรับ** — ข้อกำหนดเหล่านี้ป้องกันการสร้างหรือแก้ไฟล์โดยตั้งใจได้ แต่ป้องกัน instruction discovery ไม่ได้ทั้งหมด จากการทดสอบพบว่าเมื่อ AI เปลี่ยน working directory เข้าไปใน repository ใต้ `repos/` มันยังอาจอ่าน `AGENTS.md` หรือ skills ที่อยู่ภายใน repository นั้นได้ พฤติกรรมนี้ขึ้นกับ provider และต้องตั้งค่าแยกตาม provider โดยยังไม่มีวิธีปิดที่ได้ผล 100%
 
-## Skills สำหรับ Repository Workspace
-
-แยก workflow เป็นสาม skills โดยสองตัวแรกเป็น workflow ที่ผู้ใช้เรียกโดยตรง ส่วนตัวสุดท้ายเป็นขั้นตอนย่อยที่ถูกเรียกต่อ
-
-- `bootstrap-project-workspace` ใช้ครั้งเดียวต่อ project หลังคัดลอก starter เพื่อถามข้อมูลของ project แล้ว generate `AGENTS.md` พร้อม default repository class
-- `add-workspace-repository` ใช้ทุกครั้งที่เพิ่ม repository เพื่อจัดการ `.gitignore`, repository class และ catalog ให้สอดคล้องกันในคราวเดียว
-- `manage-repository-catalog` ใช้ค้นหาและ sync direct child repositories รวมถึงสร้าง เพิ่ม ลบ หรือแก้ authoritative Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
-
-ตัวอย่างคำขอ:
-
-```text
-ใช้ $bootstrap-project-workspace ตั้งค่า workspace สำหรับ project นี้
-ใช้ $add-workspace-repository เพิ่ม order-api เข้า workspace
-ใช้ $manage-repository-catalog sync catalog กับ repos/ ที่มีอยู่
-```
-
-## แนวทางการทำงาน
-
-1. ตรวจ `workbench/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
-2. เปลี่ยน working directory เข้า repository นั้นก่อนเรียก Git หรือเครื่องมือเฉพาะโครงการ
-3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `workbench/` ส่วนไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
-4. ตรวจ Git status ภายใน repository เป้าหมายก่อน commit
-5. ตรวจว่าไม่มี coordination artifacts ของ root workspace ปะปนอยู่ใน change set ของ external repository
-
-รายละเอียด policy ฉบับร่างอยู่ใน `AGENTS_EXAMPLE.md`
+ผลกระทบที่ต้องระวังคือ AI อาจทำตามคำสั่งของทีมเจ้าของ repository โดยที่ workspace ไม่ได้ตั้งใจ ให้ถือเป็นความเสี่ยงที่รู้อยู่ ไม่ใช่สิ่งที่แก้ได้ด้วยกฎใน workspace
 
 ## ภาษาของไฟล์ใน Workspace
 
@@ -198,12 +188,28 @@ workspace แยกภาษาออกเป็นสองเรื่อง�
 
 ภาษาของไฟล์คำสั่งไม่ได้กำหนดภาษาที่ AI ใช้คุยกับผู้ใช้ ค่าเริ่มต้นของการสนทนายังเป็นภาษาไทย และ `$bootstrap-project-workspace` ถามเฉพาะภาษาฝั่งที่คุยกับคนเท่านั้น ไม่แปลไฟล์คำสั่ง
 
-Git push safety policy อยู่ใน `GIT_POLICY.md` และถูกอ้างจาก workspace instructions เพื่อให้ AI อ่านก่อนทำ remote write
+## การตรวจสอบ Workspace
 
-`GIT_POLICY.md` แบ่ง repository เป็น class — `own` คือ repository ของผู้ใช้ซึ่ง push ได้ตามปกติ ส่วน `client` คือ repository ของผู้อื่นซึ่งห้าม push ทุกกรณี repository ที่ยังไม่ถูกจัดประเภทถือเป็น `client` เสมอ
+ตรวจ Repository Catalog ตาม contract โดยไม่ผูกกับ consumer ใด:
 
-กฎแยกตาม class อยู่ใน `GIT_POLICY.md` ซึ่งเหมือนกันทุก project ส่วนตารางว่า repository ใดอยู่ class ใดอยู่ใน `AGENTS.md` ที่ root เพราะเป็นข้อมูลเฉพาะ project และเป็นที่เดียวที่เขียนได้โดยไม่ละเมิดกฎ AI harness isolation ซึ่งห้ามเพิ่ม instruction files ลงใน `repos/*`
+```bash
+python3 tooling/validate_repository_catalog.py
+```
+
+รัน automated tests ของ contract และ tooling:
+
+```bash
+python3 -m unittest discover -s tooling/tests
+```
 
 ## สิ่งที่จะออกแบบเพิ่มเติม
 
-ในอนาคต workspace จะมี codebase knowledge ราย repository และข้อมูลสำหรับอธิบายความสัมพันธ์ข้าม repositories เช่น HTTP calls, events, queues และ identifiers ที่ใช้ map การสื่อสารกลับไปยัง `repo_id` หรือ external system โดย schema และชื่อไฟล์จะออกแบบแยกในภายหลัง
+ข้อมูลที่มี lifecycle หรือหน้าที่ต่างจาก Catalog ต้องอยู่คนละไฟล์และอ้าง repository ด้วย `repo_id` แต่ละเครื่องมือจึงเลือกใช้ repository subset ของตัวเองได้โดยไม่ทำให้ Catalog ขาดสมาชิก ชั้นข้อมูลที่อาจเพิ่มในอนาคต:
+
+- `ai-access-policy.yaml` — AI อ่าน เขียน หรือ execute repository ใดได้
+- `codebase-knowledge.yaml` — repository ใดต้อง index และใช้เครื่องมือหรือ configuration ใด
+- `integrations.yaml` — HTTP calls, events, queues, packages หรือ dependencies ที่ตรวจพบเชื่อมไปยัง repository หรือ external system ใด
+- `codebase-knowledge/` — generated knowledge ราย repository และ project-level knowledge ที่ประกอบขึ้นภายหลัง
+- `repo-sources.yaml` — remote URL ของ external repository สำหรับ clone workspace กลับมาบนเครื่องใหม่
+
+ชื่อและ schema ของไฟล์เหล่านี้ยังต้องออกแบบแยกต่างหาก ห้ามเพิ่ม fields ดังกล่าวเข้า `repositories.yaml` ล่วงหน้า และไม่ควรสร้างชั้นเหล่านี้จนกว่าจะมีงานจริงเรียกร้อง

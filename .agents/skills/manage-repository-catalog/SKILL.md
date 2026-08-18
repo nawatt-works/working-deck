@@ -9,7 +9,7 @@ Maintain the canonical inventory of repositories known to the project workspace.
 
 ## Terminology
 
-- Call each direct child directory under `repos/` a **workspace repository** or **repo**. Expect it to be a Git checkout, but catalog a non-Git directory too and emit a warning.
+- Call each direct child directory under `repos/` a **workspace repository** or **repo**. It may be a Git checkout of its own or a plain directory tracked by the root repository; catalog both without judging which.
 - Call a repo listed in `workbench/repositories.yaml` a **cataloged repository**.
 - Do not confuse a workspace repository with repository-pattern classes or data repositories inside source code.
 
@@ -41,12 +41,12 @@ repositories:
 ## Workflow
 
 1. Read the root instructions and the existing catalog, if present.
-2. Discover all direct child directories of `repos/`. Record whether each has a `.git` file or directory; do not silently omit a non-Git directory.
+2. Discover all direct child directories of `repos/`. Catalog every one of them; a directory without its own `.git` is a valid internal repository, not an exception.
 3. Compare discovered paths with cataloged entries. Do not inspect or modify files inside repositories merely to catalog them.
 4. When creating or syncing the catalog, add every uncataloged direct child. Derive a default identity by converting the directory name to lowercase snake case and prefixing `repo_`; ask only when the result is invalid, ambiguous, or collides with an existing identity.
 5. Preserve catalog entries whose checkout is missing on the current machine. Remove or rename an entry only when the user requests that change explicitly.
 6. Write schema version 1 while preserving unaffected entries and their order. Append newly discovered entries in deterministic path order unless the user specifies an order.
-7. Validate the workspace-owned contract, identities, paths, uniqueness, direct-child scope, complete direct-child coverage, and Git-checkout warnings with `python3 tooling/validate_repository_catalog.py`.
+7. Validate the workspace-owned contract, identities, paths, uniqueness, direct-child scope, and complete direct-child coverage with `python3 tooling/validate_repository_catalog.py`.
 8. After the catalog is valid, run `python3 tooling/repos_status.py` to confirm every repository is in a correct tracking state.
 
 ## Constraints

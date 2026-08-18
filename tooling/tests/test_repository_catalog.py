@@ -108,6 +108,15 @@ class RepositoryCatalogWorkspaceTest(unittest.TestCase):
             self.assertEqual(len(warnings), 1)
             self.assertIn("directory not found", warnings[0])
 
+    def test_directory_without_git_is_not_a_catalog_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "repos" / "one").mkdir(parents=True)
+            warnings = repository_warnings(
+                root, [{"repo_id": "repo_one", "path": "repos/one"}]
+            )
+            self.assertEqual(warnings, [])
+
 
 if __name__ == "__main__":
     unittest.main()
