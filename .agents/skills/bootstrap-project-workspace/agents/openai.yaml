@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bootstrap Project Workspace"
+  short_description: "Configure a fresh starter copy for one project"
+  default_prompt: "Use $bootstrap-project-workspace to turn this Working Deck copy into a configured project workspace."

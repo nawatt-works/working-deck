@@ -9,11 +9,11 @@ Working Deck เป็น workspace starter สำหรับนำโครง
 ## เริ่ม Project ใหม่
 
 1. คัดลอกไฟล์และโฟลเดอร์ของ Working Deck ที่ต้องใช้ไปยัง project ใหม่ โดยไม่เอา `.git` และไฟล์ local ที่ไม่เกี่ยวข้องไปด้วย
-2. เปลี่ยนชื่อ `AGENTS_EXAMPLE.md` เป็น `AGENTS.md` เพื่อเปิดใช้ workspace instructions กับ AI harness ที่รองรับ
-3. นำ Git repositories ของ project ไปไว้เป็น direct child ใต้ `repos/`
-4. ใช้ `$manage-repository-catalog` หรือแก้ `workbench/repositories.yaml` ให้ register repositories ทั้งหมด
-5. รัน `python3 tooling/validate_repository_catalog.py`
-6. รัน `python3 tooling/generate_vscode_workspace.py` แล้วเปิด `.code-workspace`
+2. ใช้ `$bootstrap-project-workspace` ตอบคำถามเกี่ยวกับ project แล้ว skill จะเปลี่ยน `AGENTS_EXAMPLE.md` เป็น `AGENTS.md` พร้อมบันทึก default repository class
+3. ใช้ `$add-workspace-repository` ทีละ repository เมื่อมี repository เข้ามา ทั้งตอนเริ่มและระหว่างพัฒนา
+4. ตรวจผลด้วย `python3 tooling/repos_status.py` แล้วเปิด `.code-workspace`
+
+ขั้นที่ 2 เก็บเฉพาะ posture ของ project ไม่ใช่รายชื่อ repository เพราะตอนเริ่มมักยังไม่รู้ว่าจะมี repository อะไรบ้าง และ repository จะทยอยเพิ่มระหว่างพัฒนา
 
 Catalog ใน starter เริ่มด้วย `repositories: []` ส่วนตัวอย่าง schema อยู่ในเอกสารและ skill เพื่อไม่ให้ AI เข้าใจ mock repository ว่าเป็นสมาชิกจริงของ project ใหม่
 
@@ -191,15 +191,19 @@ python3 -m unittest discover -s tooling/tests
 
 ## Skills สำหรับ Repository Workspace
 
-แยก workflow เป็นสอง skills:
+แยก workflow เป็นสี่ skills โดยสองตัวแรกเป็น workflow ที่ผู้ใช้เรียกโดยตรง ส่วนสองตัวหลังเป็นขั้นตอนย่อยที่ถูกเรียกต่อ
 
-- `manage-repository-catalog` อยู่ที่ `.agents/skills/manage-repository-catalog/` ใช้ค้นหาและ sync direct child repositories ทั้งหมด รวมถึงสร้าง เพิ่ม ลบ หรือแก้ authoritative Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
-- `generate-vscode-workspace` อยู่ที่ `.agents/skills/generate-vscode-workspace/` ใช้อ่าน catalog ที่มีอยู่แล้วเพื่อสร้างและตรวจ `.code-workspace` เท่านั้น
+- `bootstrap-project-workspace` ใช้ครั้งเดียวต่อ project หลังคัดลอก starter เพื่อถามข้อมูลของ project แล้ว generate `AGENTS.md` พร้อม default repository class
+- `add-workspace-repository` ใช้ทุกครั้งที่เพิ่ม repository เพื่อจัดการ `.gitignore`, repository class, catalog และ `.code-workspace` ให้สอดคล้องกันในคราวเดียว
+- `manage-repository-catalog` ใช้ค้นหาและ sync direct child repositories รวมถึงสร้าง เพิ่ม ลบ หรือแก้ authoritative Repository Catalog โดยไม่ตัดสิน access, indexing หรือ integrations
+- `generate-vscode-workspace` ใช้อ่าน catalog ที่มีอยู่แล้วเพื่อสร้างและตรวจ `.code-workspace` เท่านั้น
 
 ตัวอย่างคำขอ:
 
 ```text
-ใช้ $manage-repository-catalog เพิ่ม order-api เข้า Repository Catalog
+ใช้ $bootstrap-project-workspace ตั้งค่า workspace สำหรับ project นี้
+ใช้ $add-workspace-repository เพิ่ม order-api เข้า workspace
+ใช้ $manage-repository-catalog sync catalog กับ repos/ ที่มีอยู่
 ใช้ $generate-vscode-workspace สร้าง VS Code workspace จาก catalog ล่าสุด
 ```
 
