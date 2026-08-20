@@ -8,7 +8,8 @@ files such as `.ignore` and `tooling/` govern and maintain the workspace itself.
 - Holds the information and documents that the user and AI share, but never product source code.
 - Examples: plans, specifications, architecture, research, decision records, working notes, and evaluation evidence.
 - When work is analysis, planning, research, or supporting documentation that is not yet an output of any repository, store it here.
-- Never store secrets, access tokens, credentials, or identity material in `workbench/`.
+- Never store anything that grants access to a system — secrets, access tokens, credentials, private keys, session material, or connection strings containing a password. The test: if this leaked, could someone use it to act as a person or reach a system?
+- Names or handles of people involved in the work may be stored when they are part of a work record, such as who reviewed or approved something. Keep only what the work needs; do not collect contact details without a reason.
 - This area has multiple writers. Read `workbench/README.md` before creating a new file in it.
 - Write only inside your own namespace at `workbench/<producer>/`. Files at the root of `workbench/` are shared and require a contract first. When an artifact references a repository, reference it by `repo_id` rather than by path.
 
@@ -21,7 +22,7 @@ files such as `.ignore` and `tooling/` govern and maintain the workspace itself.
 - Before deleting or overwriting an existing file, confirm it does not belong to the user or to other work.
 - When a result becomes a decision, reusable evidence, or a checkpoint worth keeping, summarize or move only what is needed into `workbench/`.
 - When a temporary result is something the user must review, always tell them where the file is.
-- Never store secrets, access tokens, credentials, or identity material in temporary files.
+- Never store anything that grants access to a system in temporary files — secrets, access tokens, credentials, private keys, session material, or connection strings containing a password.
 
 ## `repos/` — external repositories
 
