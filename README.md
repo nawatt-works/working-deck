@@ -37,7 +37,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 
 1. ตรวจ `workbench/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
 2. ค้นหาโค้ดจาก workspace root ได้โดยตรง แต่ต้องเปลี่ยน working directory เข้า repository ก่อนเรียก Git, test runner หรือ build
-3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `workbench/` ส่วนไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
+3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `workbench/` ส่วนเอกสารที่ต้องให้ producer อื่นทำต่อไว้ใน `workbench/handoff/<work_id>/` และไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
 4. ตรวจ Git status ภายใน repository เป้าหมายก่อน commit
 5. รัน `python3 tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
 
@@ -56,6 +56,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 ├── workbench/
 │   ├── README.md            # กติกาว่าใครเขียนตรงไหนได้
 │   ├── repositories.yaml    # Repository Catalog instance
+│   ├── handoff/             # งานที่ส่งต่อระหว่าง producer ต่าง role
 │   └── workspace-contracts/ # shared contracts สำหรับ consumers
 ├── repos/                   # workspace repositories
 └── tooling/                 # automation สำหรับดูแล root workspace
@@ -68,6 +69,16 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 ข้อมูลในพื้นที่นี้เป็นของ root workspace และต้องไม่ถูกคัดลอกหรือ commit เข้า external repositories โดยอัตโนมัติ
 
 พื้นที่นี้มีผู้เขียนได้หลายราย แต่ละ harness หรือเครื่องมือเก็บ artifact ของตัวเองไว้ใน namespace ของตัวเองใต้ `workbench/<producer>/` ส่วนไฟล์ระดับ root ของ `workbench/` เป็นของกลางที่ต้องมี contract กติกาทั้งหมดอยู่ใน `workbench/README.md`
+
+### `workbench/handoff/`
+
+พื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่ต่างกัน เช่น ตัวที่ออกแบบและวางแผน ตัวที่ implement และตัวที่ตรวจสอบผล ใช้เมื่อรู้ว่างานจะข้าม producer เท่านั้น ส่วนงานที่ทำจบในตัวเองยังอยู่ใน namespace ของ producer นั้นตามเดิม
+
+ที่นี่เป็นข้อยกเว้นเดียวของกติกา namespace เพราะเอกสารส่งต่อถูกเขียนให้คนอื่นเอาไปทำต่อ เจ้าของจึงเป็นตัวงานไม่ใช่ผู้เขียน สิทธิ์เขียนจึงกำหนดด้วย stage แทน — หนึ่งหน่วยงานคือหนึ่งโฟลเดอร์ `<work_id>/` ภายในมีไฟล์ `<NN>-<stage>.md` ที่แต่ละไฟล์มีผู้เขียนได้ role เดียว
+
+`status` ใน frontmatter เป็นตัวบอกว่า producer ตัวถัดไปลงมือทำตามได้หรือยัง มีเฉพาะ `ready` เท่านั้นที่ทำตามได้ กติกาทั้งหมดอยู่ใน `workbench/handoff/README.md` และรูปแบบไฟล์อยู่ใน `workbench/workspace-contracts/handoff/`
+
+พื้นที่นี้เป็นสายพาน ไม่ใช่คลังประวัติ เมื่องานจบให้ย้ายเฉพาะสิ่งที่ยังมีผลบังคับต่อออกไปเก็บที่อื่น แล้วลบโฟลเดอร์หน่วยงานนั้นได้
 
 ### `repos/`
 
@@ -89,7 +100,8 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 - `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
 - `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ repository ภายนอก
-- `repository_catalog.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
+- `validate_handoff.py` ตรวจเอกสารใน `workbench/handoff/` ว่าชื่อหน่วยงาน ชื่อไฟล์ stage และ frontmatter ตรงกันและอ้าง `repo_id` ที่มีอยู่จริง
+- `repository_catalog.py` และ `handoff.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
 
 ## Repository Catalog
 
@@ -194,6 +206,12 @@ workspace แยกภาษาออกเป็นสองเรื่อง�
 
 ```bash
 python3 tooling/validate_repository_catalog.py
+```
+
+ตรวจเอกสารใน `workbench/handoff/` ตาม contract:
+
+```bash
+python3 tooling/validate_handoff.py
 ```
 
 รัน automated tests ของ contract และ tooling:

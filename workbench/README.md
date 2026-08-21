@@ -13,6 +13,7 @@
 workbench/
 ├── README.md              # กติกาของพื้นที่นี้
 ├── repositories.yaml      # shared — Repository Catalog
+├── handoff/               # shared — งานที่ส่งต่อระหว่าง producer
 ├── workspace-contracts/   # shared — contract ของไฟล์ที่ใช้ร่วมกัน
 └── <producer>/            # namespace ของแต่ละ producer
 ```
@@ -26,6 +27,14 @@ producer อ่านไฟล์ใดใน `workbench/` ก็ได้ แ�
 
 ไฟล์ที่ระดับ `workbench/` root เป็นของกลาง แก้ได้เฉพาะเมื่อผู้ใช้ร้องขอหรือเมื่อ
 ทำตาม workflow ที่ contract ของไฟล์นั้นกำหนดไว้
+
+**ข้อยกเว้นเดียวคือ `handoff/`** ซึ่งเป็นพื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่
+ต่างกัน สิทธิ์เขียนที่นั่นกำหนดด้วย stage ไม่ใช่ namespace เพราะเอกสารส่งต่อถูกเขียน
+ให้คนอื่นเอาไปทำต่อ เจ้าของจึงเป็นตัวงานไม่ใช่ผู้เขียน กติกาอยู่ใน
+`workbench/handoff/README.md`
+
+งานที่ producer เดียวทำจบในตัวเองไม่ต้องผ่าน `handoff/` ให้เขียนไว้ใน namespace
+ตัวเองตามปกติ
 
 ### 2. ของที่ shared ต้องมี contract
 

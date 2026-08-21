@@ -28,12 +28,14 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
 8. Verify the result by running, from the workspace root:
    - `python3 tooling/validate_repository_catalog.py`
    - `python3 tooling/repos_status.py`
+   - `python3 tooling/validate_handoff.py`
 9. Report what was generated, the recorded defaults, and that repositories are added later with `$add-workspace-repository`.
 
 ## Constraints
 
 - Do not invent repositories, `repo_id` values, remotes, or catalog entries.
 - Do not create speculative folders under `workbench/`; namespaces are created when a producer first writes a file.
+- Keep `workbench/handoff/` as the starter ships it, holding only its `README.md`. Work items are created later, when work actually crosses from one role to another.
 - Do not weaken `repos/*` in `.gitignore`. The default-deny posture is fixed for every project regardless of the answers.
 - Do not create, edit, delete, or rename files under `repos/*`.
 - Do not add AI harness configuration to any repository under `repos/`.

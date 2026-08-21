@@ -12,6 +12,9 @@ files such as `.ignore` and `tooling/` govern and maintain the workspace itself.
 - Names or handles of people involved in the work may be stored when they are part of a work record, such as who reviewed or approved something. Keep only what the work needs; do not collect contact details without a reason.
 - This area has multiple writers. Read `workbench/README.md` before creating a new file in it.
 - Write only inside your own namespace at `workbench/<producer>/`. Files at the root of `workbench/` are shared and require a contract first. When an artifact references a repository, reference it by `repo_id` rather than by path.
+- `workbench/handoff/` is the one exception to the namespace rule. Work that will cross to another role goes into `workbench/handoff/<work_id>/`, where write permission is set by stage rather than by namespace, because a handoff document is written for someone else to act on. Read `workbench/handoff/README.md` before creating or continuing a work item.
+- A stage file has exactly one writing role. Respond by writing your own stage file, never by editing another role's, and act only on a document whose `status` is `ready`.
+- Work you finish yourself does not go through `handoff/`. Keep it in your own namespace.
 
 ## Temporary files
 
@@ -62,15 +65,18 @@ files such as `.ignore` and `tooling/` govern and maintain the workspace itself.
 
 - `tooling/` holds automation that maintains the root workspace and is not source code of any repository under `repos/`.
 - `workbench/workspace-contracts/repository-catalog/` is the workspace-level contract for the Repository Catalog. Software Factory, Codebase Knowledge, and other systems are equal consumers.
+- `workbench/workspace-contracts/handoff/` is the workspace-level contract for handoff documents. It defines the work item directory name, the `<NN>-<stage>.md` file name, and the required frontmatter.
 - `workbench/repositories.yaml` is the source of truth for cataloged repositories. It uses `schema_version: 1`, and each entry carries only a stable `repo_id` matching `repo_<snake_case_name>` and a `path` that is a direct child of `repos/`.
 - Access policy, indexing configuration, integration mapping, and generated knowledge live outside the Repository Catalog and reference repositories by `repo_id`.
 - Tool-specific configuration decides which cataloged repositories it uses. Never remove a repository from the Catalog to control access, indexing, or a tool's behavior.
 - After editing `workbench/repositories.yaml`, validate with `python3 tooling/validate_repository_catalog.py`, then check every repository with `python3 tooling/repos_status.py`.
+- After writing or moving a handoff document, validate with `python3 tooling/validate_handoff.py`.
 - Workspace tooling must not write files into `repos/*` unless the command's purpose is to change the work inside that repository and the user asked for it explicitly.
 
 ## Choosing where a file belongs
 
 - Documents for thinking and collaboration → `workbench/`
+- Documents one role hands to another → `workbench/handoff/<work_id>/`
 - Source code, committed tests, reusable fixtures, configuration, and repository-owned build artifacts → `repos/<repository-name>/`
 - Temporary files, experiments, generated fixtures, and intermediate output → the harness or system temporary directory, never `workbench/` or `repos/*`
 - Root workspace automation → `tooling/`
