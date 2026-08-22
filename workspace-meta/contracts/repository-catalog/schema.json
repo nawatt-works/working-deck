@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:working-deck:workspace-contracts:repository-catalog:v1",
+  "$id": "urn:working-deck:contracts:repository-catalog:v1",
   "title": "Working Deck Repository Catalog",
   "type": "object",
   "additionalProperties": false,

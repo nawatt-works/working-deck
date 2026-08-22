@@ -34,9 +34,9 @@ class ArtifactHitsTest(unittest.TestCase):
         )
 
     def test_flags_coordination_directories(self) -> None:
-        entries = [("??", ".claude/settings.json"), ("A ", "workbench/plan.md")]
+        entries = [("??", ".claude/settings.json"), ("A ", "workspace-meta/plan.md")]
         self.assertEqual(
-            artifact_hits(entries), [".claude/settings.json", "workbench/plan.md"]
+            artifact_hits(entries), [".claude/settings.json", "workspace-meta/plan.md"]
         )
 
     def test_ignores_ordinary_source_changes(self) -> None:
@@ -44,7 +44,7 @@ class ArtifactHitsTest(unittest.TestCase):
         self.assertEqual(artifact_hits(entries), [])
 
     def test_does_not_match_on_substrings_of_directory_names(self) -> None:
-        entries = [("??", "src/workbenches/tool.ts"), ("??", "src/claude.ts")]
+        entries = [("??", "src/workspace-metadata/tool.ts"), ("??", "src/claude.ts")]
         self.assertEqual(artifact_hits(entries), [])
 
     def test_deduplicates_and_sorts(self) -> None:

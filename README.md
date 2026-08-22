@@ -1,8 +1,8 @@
 # Working Deck
 
-Workspace สำหรับทำงานร่วมกันระหว่างมนุษย์กับ AI บนหลาย Git repositories โดยแยกข้อมูลสำหรับ coordination ออกจาก source code ของแต่ละ repository อย่างชัดเจน
+Workspace สำหรับทำงานร่วมกันระหว่างมนุษย์กับ AI บนหลาย Git repositories โดยแยก metadata และ coordination contracts ออกจาก source code ของแต่ละ repository อย่างชัดเจน
 
-root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน บริบท เอกสาร เครื่องมือ และ configuration ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` ซึ่งส่วนใหญ่เป็น Git repository อิสระจาก root workspace แต่บางโฟลเดอร์อาจถูก track ไปกับ root ได้
+root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน เครื่องมือ และ workspace-level metadata ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` ซึ่งส่วนใหญ่เป็น Git repository อิสระจาก root workspace แต่บางโฟลเดอร์อาจถูก track ไปกับ root ได้
 
 Working Deck เป็น workspace starter สำหรับนำโครงสร้างและไฟล์ที่จำเป็นไปใช้เป็นฐานของ project อื่น ไม่ใช่ application project
 
@@ -35,9 +35,9 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 
 ## แนวทางการทำงานประจำวัน
 
-1. ตรวจ `workbench/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
+1. ตรวจ `workspace-meta/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
 2. ค้นหาโค้ดจาก workspace root ได้โดยตรง แต่ต้องเปลี่ยน working directory เข้า repository ก่อนเรียก Git, test runner หรือ build
-3. เก็บ notes, plans และหลักฐานการทำงานไว้ใน `workbench/` ส่วนเอกสารที่ต้องให้ producer อื่นทำต่อไว้ใน `workbench/handoff/<work_id>/` และไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
+3. ใช้ `workspace-meta/` เฉพาะ metadata หรือ contract กลางของ workspace ส่วน artifact ของ harness ให้เก็บตาม convention ของ harness นั้น และไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
 4. ตรวจ Git status ภายใน repository เป้าหมายก่อน commit
 5. รัน `python3 tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
 
@@ -53,30 +53,30 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 ├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
 ├── .agents/
 │   └── skills/              # skills ที่เป็นของ root workspace
-├── workbench/
-│   ├── README.md            # กติกาว่าใครเขียนตรงไหนได้
+├── workspace-meta/
+│   ├── README.md            # กติกาของ workspace metadata กลาง
 │   ├── repositories.yaml    # Repository Catalog instance
 │   ├── handoff/             # งานที่ส่งต่อระหว่าง producer ต่าง role
-│   └── workspace-contracts/ # shared contracts สำหรับ consumers
+│   └── contracts/           # shared contracts สำหรับ consumers
 ├── repos/                   # workspace repositories
 └── tooling/                 # automation สำหรับดูแล root workspace
 ```
 
-### `workbench/`
+### `workspace-meta/`
 
-เก็บบริบทและเอกสารที่มนุษย์กับ AI ใช้ทำงานร่วมกัน เช่น แผนงาน specification, architecture, research, decisions และ Repository Catalog
+เก็บ metadata และ contract กลางที่ Working Deck เป็นเจ้าของเอง เช่น Repository Catalog, handoff contract และ contract อื่นที่ต้องให้หลาย harness หรือ automation อ้างร่วมกัน
 
 ข้อมูลในพื้นที่นี้เป็นของ root workspace และต้องไม่ถูกคัดลอกหรือ commit เข้า external repositories โดยอัตโนมัติ
 
-พื้นที่นี้มีผู้เขียนได้หลายราย แต่ละ harness หรือเครื่องมือเก็บ artifact ของตัวเองไว้ใน namespace ของตัวเองใต้ `workbench/<producer>/` ส่วนไฟล์ระดับ root ของ `workbench/` เป็นของกลางที่ต้องมี contract กติกาทั้งหมดอยู่ใน `workbench/README.md`
+`workspace-meta/` ไม่ใช่พื้นที่บังคับสำหรับ notes, plans, prompts หรือ artifact ทั้งหมดที่ AI สร้างขึ้น หาก harness ใดมีตำแหน่งและ format ของตัวเอง เช่น `.agents/`, `.claude/`, `.cursor/` หรือ `.my-harness/` ให้ใช้ convention ของ harness นั้นได้ และให้ producer อื่นอ่านจากตำแหน่งนั้นตาม contract/convention ของเจ้าของ artifact
 
-### `workbench/handoff/`
+### `workspace-meta/handoff/`
 
-พื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่ต่างกัน เช่น ตัวที่ออกแบบและวางแผน ตัวที่ implement และตัวที่ตรวจสอบผล ใช้เมื่อรู้ว่างานจะข้าม producer เท่านั้น ส่วนงานที่ทำจบในตัวเองยังอยู่ใน namespace ของ producer นั้นตามเดิม
+พื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่ต่างกัน เช่น ตัวที่ออกแบบและวางแผน ตัวที่ implement และตัวที่ตรวจสอบผล ใช้เมื่อรู้ว่างานจะข้าม producer เท่านั้น ส่วนงานที่ทำจบในตัวเองให้ใช้ตำแหน่ง artifact ตาม convention ของ harness หรือ workflow นั้น
 
-ที่นี่เป็นข้อยกเว้นเดียวของกติกา namespace เพราะเอกสารส่งต่อถูกเขียนให้คนอื่นเอาไปทำต่อ เจ้าของจึงเป็นตัวงานไม่ใช่ผู้เขียน สิทธิ์เขียนจึงกำหนดด้วย stage แทน — หนึ่งหน่วยงานคือหนึ่งโฟลเดอร์ `<work_id>/` ภายในมีไฟล์ `<NN>-<stage>.md` ที่แต่ละไฟล์มีผู้เขียนได้ role เดียว
+เอกสารส่งต่อถูกเขียนให้คนอื่นเอาไปทำต่อ เจ้าของจึงเป็นตัวงานไม่ใช่ผู้เขียน สิทธิ์เขียนจึงกำหนดด้วย stage — หนึ่งหน่วยงานคือหนึ่งโฟลเดอร์ `<work_id>/` ภายในมีไฟล์ `<NN>-<stage>.md` ที่แต่ละไฟล์มีผู้เขียนได้ role เดียว
 
-`status` ใน frontmatter เป็นตัวบอกว่า producer ตัวถัดไปลงมือทำตามได้หรือยัง มีเฉพาะ `ready` เท่านั้นที่ทำตามได้ กติกาทั้งหมดอยู่ใน `workbench/handoff/README.md` และรูปแบบไฟล์อยู่ใน `workbench/workspace-contracts/handoff/`
+`status` ใน frontmatter เป็นตัวบอกว่า producer ตัวถัดไปลงมือทำตามได้หรือยัง มีเฉพาะ `ready` เท่านั้นที่ทำตามได้ กติกาทั้งหมดอยู่ใน `workspace-meta/handoff/README.md` และรูปแบบไฟล์อยู่ใน `workspace-meta/contracts/handoff/`
 
 พื้นที่นี้เป็นสายพาน ไม่ใช่คลังประวัติ เมื่องานจบให้ย้ายเฉพาะสิ่งที่ยังมีผลบังคับต่อออกไปเก็บที่อื่น แล้วลบโฟลเดอร์หน่วยงานนั้นได้
 
@@ -90,7 +90,7 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 บาง project มีโฟลเดอร์ใต้ `repos/` ที่ไม่มี Git ของตัวเองและควรถูก commit ไปกับ root workspace กรณีนี้ให้ opt-in ทีละรายการด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore` ทั้งสองแบบเป็นสถานะที่ถูกต้อง รายละเอียดอยู่ในหัวข้อการติดตามสถานะ
 
-ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workbench/repositories.yaml`
+ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workspace-meta/repositories.yaml`
 
 คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ cataloged repository
 
@@ -100,12 +100,12 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 - `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
 - `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ repository ภายนอก
-- `validate_handoff.py` ตรวจเอกสารใน `workbench/handoff/` ว่าชื่อหน่วยงาน ชื่อไฟล์ stage และ frontmatter ตรงกันและอ้าง `repo_id` ที่มีอยู่จริง
+- `validate_handoff.py` ตรวจเอกสารใน `workspace-meta/handoff/` ว่าชื่อหน่วยงาน ชื่อไฟล์ stage และ frontmatter ตรงกันและอ้าง `repo_id` ที่มีอยู่จริง
 - `repository_catalog.py` และ `handoff.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
 
 ## Repository Catalog
 
-ไฟล์ `workbench/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
+ไฟล์ `workspace-meta/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
 
 ```yaml
 schema_version: 1
@@ -121,7 +121,7 @@ repositories:
 - `repo_id` — stable identity ที่ไม่ซ้ำในรูปแบบ `repo_<snake_case_name>` สำหรับให้ไฟล์อื่นอ้างอิง
 - `path` — relative path ที่ไม่ซ้ำและต้องเป็น direct child ภายใต้ `repos/`
 
-schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่ นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workbench/workspace-contracts/repository-catalog/`
+schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่ นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workspace-meta/contracts/repository-catalog/`
 
 Catalog ดูแลเรื่องสมาชิกภาพอย่างเดียว ไม่ตัดสินว่า repository นั้นมี Git ของตัวเองหรือไม่ AI มีสิทธิ์เข้าถึงแค่ไหน ต้องถูก index หรือไม่ หรือเป็น application source code หรือเปล่า repository ที่เป็น test environment, documentation, agent skill หรือ extension จึงอยู่ใน catalog ได้
 
@@ -153,7 +153,7 @@ python3 tooling/repos_status.py
 
 การตัดสิน tracking state เป็นหน้าที่ของเครื่องมือนี้เท่านั้น เพราะต้องดู `.gitignore` ประกอบด้วย `validate_repository_catalog.py` จึงไม่ตัดสินเรื่องนี้และไม่เตือนเมื่อ repository ไม่มี `.git`
 
-**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ repository ภายนอกเพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workbench/` ที่กำลังจะถูก commit เข้า repository ของผู้อื่น
+**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ repository ภายนอกเพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workspace-meta/` ที่กำลังจะถูก commit เข้า repository ของผู้อื่น
 
 ตรวจเฉพาะไฟล์ที่ยัง pending โดยตั้งใจ ไฟล์ที่ commit ไปแล้วถือเป็นทรัพย์สินของ repository นั้น เช่น AI harness configuration ที่ทีมเจ้าของใช้งานอยู่ ซึ่งไม่ใช่การรั่วไหล
 
@@ -208,7 +208,7 @@ workspace แยกภาษาออกเป็นสองเรื่อง�
 python3 tooling/validate_repository_catalog.py
 ```
 
-ตรวจเอกสารใน `workbench/handoff/` ตาม contract:
+ตรวจเอกสารใน `workspace-meta/handoff/` ตาม contract:
 
 ```bash
 python3 tooling/validate_handoff.py

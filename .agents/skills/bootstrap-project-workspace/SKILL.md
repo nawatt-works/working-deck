@@ -24,7 +24,7 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
 4. Rename `AGENTS_EXAMPLE.md` to `AGENTS.md` with `git mv` so the project keeps exactly one instruction file.
 5. Fill the Repository Classes section in `AGENTS.md` with the answers. Record the default class and the root workspace class. Leave the per-repository table empty when no repository differs from the default.
 6. Adjust only the human-facing half of the Language section in `AGENTS.md` when the user chose a language other than the starter default. Leave the instruction-file half unchanged, and do not translate `AGENTS.md`, `GIT_POLICY.md`, or any `SKILL.md`.
-7. Leave `workbench/repositories.yaml` as `repositories: []` unless repositories already exist under `repos/`. If they do, stop and tell the user to run `$add-workspace-repository` for each one rather than cataloging them here.
+7. Leave `workspace-meta/repositories.yaml` as `repositories: []` unless repositories already exist under `repos/`. If they do, stop and tell the user to run `$add-workspace-repository` for each one rather than cataloging them here.
 8. Verify the result by running, from the workspace root:
    - `python3 tooling/validate_repository_catalog.py`
    - `python3 tooling/repos_status.py`
@@ -34,8 +34,8 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
 ## Constraints
 
 - Do not invent repositories, `repo_id` values, remotes, or catalog entries.
-- Do not create speculative folders under `workbench/`; namespaces are created when a producer first writes a file.
-- Keep `workbench/handoff/` as the starter ships it, holding only its `README.md`. Work items are created later, when work actually crosses from one role to another.
+- Do not create speculative folders under `workspace-meta/`; it is for workspace-owned metadata and contracts, not a catch-all artifact area.
+- Keep `workspace-meta/handoff/` as the starter ships it, holding only its `README.md`. Work items are created later, when work actually crosses from one role to another through the Working Deck handoff contract.
 - Do not weaken `repos/*` in `.gitignore`. The default-deny posture is fixed for every project regardless of the answers.
 - Do not create, edit, delete, or rename files under `repos/*`.
 - Do not add AI harness configuration to any repository under `repos/`.

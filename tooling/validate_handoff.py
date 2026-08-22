@@ -15,8 +15,8 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HANDOFF = ROOT / "workbench" / "handoff"
-CATALOG = ROOT / "workbench" / "repositories.yaml"
+HANDOFF = ROOT / "workspace-meta" / "handoff"
+CATALOG = ROOT / "workspace-meta" / "repositories.yaml"
 
 
 def main() -> int:

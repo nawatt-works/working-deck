@@ -23,7 +23,7 @@ The other two combinations are errors that `python3 tooling/repos_status.py` rep
 3. Inspect whether the directory has its own `.git`. Ask the user which mode is intended when the directory is empty or newly created.
 4. For an internal repository, add `!repos/<directory>/` to the opt-in block in `.gitignore`. For an external repository, make sure no such line exists for it.
 5. Ask for the repository class when it is not obvious, and state the project default in the question. Add a row to the Repository Classes table in `AGENTS.md` only when the class differs from the default; leave the table untouched otherwise.
-6. Use `$manage-repository-catalog` to add the catalog entry. Do not hand-edit `workbench/repositories.yaml` in this skill.
+6. Use `$manage-repository-catalog` to add the catalog entry. Do not hand-edit `workspace-meta/repositories.yaml` in this skill.
 7. Run `python3 tooling/repos_status.py` and confirm the new repository reports `external` or `internal` with no errors.
 8. Report the resulting mode, class, `repo_id`, and any warning that remains.
 
@@ -31,8 +31,8 @@ The other two combinations are errors that `python3 tooling/repos_status.py` rep
 
 - Never create, edit, delete, or rename files inside the repository being added, including its `.gitignore` and any AI harness configuration.
 - Never run `git init` inside a directory under `repos/` to change its tracking mode; ask the user instead.
-- Never add `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, or `workbench/` content to a repository under `repos/`.
+- Never add `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, `workspace-meta/`, or legacy `workbench/` content to a repository under `repos/`.
 - Never remove or weaken `repos/*` in `.gitignore` to make a repository visible; use a single `!repos/<directory>/` opt-in line.
 - Treat a repository as `client` whenever ownership is unconfirmed, and never record `own` without the user saying so.
-- Do not record a remote URL, description, or class inside `workbench/repositories.yaml`; schema version 1 holds only `repo_id` and `path`.
+- Do not record a remote URL, description, or class inside `workspace-meta/repositories.yaml`; schema version 1 holds only `repo_id` and `path`.
 - Stop and report rather than guessing when the directory is missing, is not a repository, or already has a conflicting catalog entry.

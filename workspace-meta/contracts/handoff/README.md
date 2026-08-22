@@ -1,28 +1,28 @@
 # Handoff Contract
 
-Contract นี้กำหนดรูปแบบและความหมายของเอกสารใน `workbench/handoff/` สำหรับ
+Contract นี้กำหนดรูปแบบและความหมายของเอกสารใน `workspace-meta/handoff/` สำหรับ
 Project Workspace ที่สร้างจาก Working Deck โดยไม่ผูกกับ producer ใด producer หนึ่ง
 
 กติกาการทำงานของพื้นที่ เช่น หน่วยงานเกิดเมื่อไหร่และใครกำหนด `work_id` อยู่ที่
-`workbench/handoff/README.md` ส่วนไฟล์นี้กำหนดเฉพาะรูปแบบที่เครื่องมือตรวจได้
+`workspace-meta/handoff/README.md` ส่วนไฟล์นี้กำหนดเฉพาะรูปแบบที่เครื่องมือตรวจได้
 
 ## Ownership
 
 - Project Workspace เป็นเจ้าของเนื้อหาของหน่วยงานที่เกิดขึ้นในตัวเอง
 - Working Deck เป็นเจ้าของ contract version, validation rules และ conventions
 - producer ทุก role เป็น consumers ที่เท่าเทียมกัน ไม่มี role ใดเป็นเจ้าของพื้นที่
-- producer ต้องเก็บ configuration และ artifact ภายในของตัวเองไว้ใน namespace
-  ตัวเอง แล้วใช้พื้นที่นี้เฉพาะของที่ส่งต่อจริง
+- producer ต้องเก็บ configuration และ artifact ภายในของตัวเองไว้ในตำแหน่งที่
+  harness หรือ workflow ของตนกำหนด แล้วใช้พื้นที่นี้เฉพาะของที่ส่งต่อจริง
 
 ## Version 1
 
 ### Work item
 
-- หนึ่งหน่วยงานคือหนึ่ง direct child directory ใต้ `workbench/handoff/`
+- หนึ่งหน่วยงานคือหนึ่ง direct child directory ใต้ `workspace-meta/handoff/`
 - ชื่อ directory คือ `work_id` ซึ่งต้องตรงกับ `YYYYMMDD-<kebab-slug>` และส่วน
   วันที่ต้องเป็นวันที่ที่มีอยู่จริงตามปฏิทิน
 - หน่วยงานต้องมี stage file อย่างน้อยหนึ่งไฟล์ · directory ที่ว่างถือว่าผิด
-- ไฟล์ที่ระดับ root ของ `workbench/handoff/` ที่ไม่ใช่ `README.md` ถือว่าผิด
+- ไฟล์ที่ระดับ root ของ `workspace-meta/handoff/` ที่ไม่ใช่ `README.md` ถือว่าผิด
 
 ### Stage file
 
@@ -41,7 +41,7 @@ stage file ต้องขึ้นต้นด้วย YAML frontmatter ที
 - `stage` — required · ต้องตรงกับส่วน `<stage>` ในชื่อไฟล์
 - `status` — required · `draft`, `ready` หรือ `superseded`
 - `author` — required · ชื่อ producer เป็น kebab-case
-- `repos` — optional · list ของ `repo_id` ที่มีอยู่จริงใน `workbench/repositories.yaml`
+- `repos` — optional · list ของ `repo_id` ที่มีอยู่จริงใน `workspace-meta/repositories.yaml`
 
 ตัวอย่าง:
 

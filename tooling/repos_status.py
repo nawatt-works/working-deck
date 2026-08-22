@@ -31,14 +31,14 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOG = ROOT / "workbench" / "repositories.yaml"
+CATALOG = ROOT / "workspace-meta" / "repositories.yaml"
 
 # ไฟล์และโฟลเดอร์ที่เป็น coordination artifact ของ root workspace
 # การพบสิ่งเหล่านี้ใน change set ของ repository ภายนอกถือว่าผิดปกติเสมอ
 ARTIFACT_NAMES = frozenset(
     {"AGENTS.md", "AGENTS.override.md", "CLAUDE.md", "GIT_POLICY.md"}
 )
-ARTIFACT_DIRS = frozenset({".agents", ".claude", "workbench"})
+ARTIFACT_DIRS = frozenset({".agents", ".claude", "workspace-meta", "workbench"})
 
 STATE_OK_EXTERNAL = "external"
 STATE_OK_INTERNAL = "internal"

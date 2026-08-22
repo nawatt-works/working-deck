@@ -25,7 +25,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOG = ROOT / "workbench" / "repositories.yaml"
+CATALOG = ROOT / "workspace-meta" / "repositories.yaml"
 
 
 def main() -> int:

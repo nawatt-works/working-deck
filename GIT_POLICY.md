@@ -38,7 +38,7 @@ The root workspace repository is `own` unless the project states otherwise.
 
 - Never commit or push this workspace's coordination artifacts into a repository
   under `repos/`, regardless of class. This includes `AGENTS.md`, `CLAUDE.md`,
-  `.agents/`, `.claude/`, and anything from `workbench/`.
+  `.agents/`, `.claude/`, and anything from `workspace-meta/`.
 - Run `python3 tooling/repos_status.py` before committing inside a repository
   under `repos/`. It reports pending coordination artifacts that would otherwise
   reach someone else's history.

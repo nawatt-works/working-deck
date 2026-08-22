@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:working-deck:workspace-contracts:handoff:v1",
+  "$id": "urn:working-deck:contracts:handoff:v1",
   "title": "Working Deck Handoff Stage Document",
-  "description": "Frontmatter of a stage file under workbench/handoff/<work_id>/",
+  "description": "Frontmatter of a stage file under workspace-meta/handoff/<work_id>/",
   "type": "object",
   "additionalProperties": false,
   "required": ["work_id", "stage", "status", "author"],
