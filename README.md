@@ -2,7 +2,7 @@
 
 Workspace สำหรับทำงานร่วมกันระหว่างมนุษย์กับ AI บนหลาย Git repositories โดยแยก metadata และ coordination contracts ออกจาก source code ของแต่ละ repository อย่างชัดเจน
 
-root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน เครื่องมือ และ workspace-level metadata ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` ซึ่งส่วนใหญ่เป็น Git repository อิสระจาก root workspace แต่บางโฟลเดอร์อาจถูก track ไปกับ root ได้
+root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน เครื่องมือ และ workspace-level metadata ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` ซึ่งเป็น default source area ของ catalog schema v1 และส่วนใหญ่เป็น Git repository อิสระจาก root workspace แต่บางโฟลเดอร์อาจถูก track ไปกับ root ได้
 
 Working Deck เป็น workspace starter สำหรับนำโครงสร้างและไฟล์ที่จำเป็นไปใช้เป็นฐานของ project อื่น ไม่ใช่ application project
 
@@ -19,7 +19,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 
 ## Skills
 
-แยก workflow เป็นสาม skills โดยสองตัวแรกเป็น workflow ที่ผู้ใช้เรียกโดยตรง ส่วนตัวสุดท้ายเป็นขั้นตอนย่อยที่ถูกเรียกต่อ
+แยก workflow เป็นสาม skills ที่ผู้ใช้เรียกได้โดยตรง โดย `add-workspace-repository` อาจใช้ `manage-repository-catalog` เป็นขั้นตอนย่อยเมื่อต้องเพิ่ม catalog entry
 
 - `bootstrap-project-workspace` ใช้ครั้งเดียวต่อ project หลังคัดลอก starter เพื่อถามข้อมูลของ project แล้ว generate `AGENTS.md` พร้อม default repository class
 - `add-workspace-repository` ใช้ทุกครั้งที่เพิ่ม repository เพื่อจัดการ `.gitignore`, repository class และ catalog ให้สอดคล้องกันในคราวเดียว
@@ -50,6 +50,7 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 ├── AGENTS_EXAMPLE.md        # template ของ workspace instructions
 ├── GIT_POLICY.md            # Git push safety policy แยกตาม repository class
 ├── README.md
+├── .gitignore               # กัน repos/* จาก root Git และ opt-in internal repo ทีละรายการ
 ├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
 ├── .agents/
 │   └── skills/              # skills ที่เป็นของ root workspace
@@ -96,10 +97,10 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 ### `tooling/`
 
-เก็บ automation ที่ดูแล root workspace เครื่องมือในพื้นที่นี้ต้องไม่เขียนไฟล์ลง `repos/*` เว้นแต่ผู้ใช้ร้องขอให้แก้ตัวงานใน repository นั้นอย่างชัดเจน
+เก็บ automation ที่ดูแล root workspace เครื่องมือในพื้นที่นี้ต้องไม่เขียนไฟล์ลง work repository เช่น `repos/*` หรือ source root อื่นที่ project กำหนดไว้ เว้นแต่ผู้ใช้ร้องขอให้แก้ตัวงานใน repository นั้นอย่างชัดเจน
 
 - `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
-- `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ repository ภายนอก
+- `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ work repository
 - `validate_handoff.py` ตรวจเอกสารใน `workspace-meta/handoff/` ว่าชื่อหน่วยงาน ชื่อไฟล์ stage และ frontmatter ตรงกันและอ้าง `repo_id` ที่มีอยู่จริง
 - `repository_catalog.py` และ `handoff.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
 
@@ -153,7 +154,7 @@ python3 tooling/repos_status.py
 
 การตัดสิน tracking state เป็นหน้าที่ของเครื่องมือนี้เท่านั้น เพราะต้องดู `.gitignore` ประกอบด้วย `validate_repository_catalog.py` จึงไม่ตัดสินเรื่องนี้และไม่เตือนเมื่อ repository ไม่มี `.git`
 
-**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ repository ภายนอกเพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workspace-meta/` ที่กำลังจะถูก commit เข้า repository ของผู้อื่น
+**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ work repository เพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workspace-meta/` ที่กำลังจะถูก commit เข้า repository งาน
 
 ตรวจเฉพาะไฟล์ที่ยัง pending โดยตั้งใจ ไฟล์ที่ commit ไปแล้วถือเป็นทรัพย์สินของ repository นั้น เช่น AI harness configuration ที่ทีมเจ้าของใช้งานอยู่ ซึ่งไม่ใช่การรั่วไหล
 
@@ -206,6 +207,12 @@ workspace แยกภาษาออกเป็นสองเรื่อง�
 
 ```bash
 python3 tooling/validate_repository_catalog.py
+```
+
+ตรวจ tracking state และ coordination artifact leak ของ repositories:
+
+```bash
+python3 tooling/repos_status.py
 ```
 
 ตรวจเอกสารใน `workspace-meta/handoff/` ตาม contract:
