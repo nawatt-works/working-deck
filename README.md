@@ -173,7 +173,7 @@ python3 tooling/repos_status.py
 
 repository ถูกแบ่งเป็น class:
 
-- `own` — repository ของผู้ใช้ push ได้ตามปกติ
+- `own` — repository ของผู้ใช้ push ได้เมื่อผู้ใช้สั่งและ workflow ของ repository นั้นอนุญาต
 - `client` — repository ของผู้อื่น ห้าม push ทุกกรณี
 - repository ที่ยังไม่ถูกจัดประเภทถือเป็น `client` เสมอ repository ใหม่จึงถูกป้องกันไว้ก่อนโดยไม่ต้องพึ่งความจำ
 
@@ -185,7 +185,7 @@ repository ถูกแบ่งเป็น class:
 
 ไฟล์สำหรับ coordination กับ AI เช่น `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, prompts, plans และ evaluation artifacts ต้องอยู่ใน root workspace เท่านั้น
 
-ห้ามเพิ่ม แก้ไข หรือลบ AI harness configuration ภายใน `repos/*` เว้นแต่ผู้ใช้ร้องขอการเปลี่ยนแปลงไฟล์นั้นโดยตรง ไฟล์ configuration ที่มีอยู่ใน external repository ถือเป็นทรัพย์สินและส่วนหนึ่งของ workflow ของเจ้าของ repository
+ห้ามเพิ่ม แก้ไข หรือลบ AI harness configuration ภายใน work repository เช่น `repos/*` หรือ source root อื่นที่ project กำหนดไว้ เว้นแต่ผู้ใช้ร้องขอการเปลี่ยนแปลงไฟล์นั้นโดยตรง ไฟล์ configuration ที่มีอยู่ใน external repository ถือเป็นทรัพย์สินและส่วนหนึ่งของ workflow ของเจ้าของ repository
 
 **ข้อจำกัดที่ต้องยอมรับ** — ข้อกำหนดเหล่านี้ป้องกันการสร้างหรือแก้ไฟล์โดยตั้งใจได้ แต่ป้องกัน instruction discovery ไม่ได้ทั้งหมด จากการทดสอบพบว่าเมื่อ AI เปลี่ยน working directory เข้าไปใน repository ใต้ `repos/` มันยังอาจอ่าน `AGENTS.md` หรือ skills ที่อยู่ภายใน repository นั้นได้ พฤติกรรมนี้ขึ้นกับ provider และต้องตั้งค่าแยกตาม provider โดยยังไม่มีวิธีปิดที่ได้ผล 100%
 

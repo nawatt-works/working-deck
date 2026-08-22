@@ -1,19 +1,22 @@
 # Git Policy
 
 These rules apply to every Git repository reachable from this workspace,
-including the root workspace itself and every repository under `repos/`. Their
-purpose is to prevent unintended or destructive remote writes, to keep a local
-branch from pushing to a differently named remote branch, and to keep this
-workspace's coordination artifacts out of repositories owned by other people.
+including the root workspace itself, every repository under `repos/`, and any
+other source root that a project explicitly documents. Their purpose is to
+prevent unintended or destructive remote writes, to keep a local branch from
+pushing to a differently named remote branch, and to keep this workspace's
+coordination artifacts out of work repositories.
 
 ## Repository classes
 
 Every repository belongs to exactly one class. The root `AGENTS.md` declares the
 project's default class and lists any repository that differs, keyed by
-`repo_id`. Classification lives in the root `AGENTS.md` because the AI harness
-isolation rules forbid adding instruction files inside `repos/*`.
+`repo_id` when one exists. Classification lives in the root `AGENTS.md` because
+the AI harness isolation rules forbid adding instruction files inside work
+repositories.
 
-- `own` — the user owns this repository. Ordinary pushes are allowed.
+- `own` — the user owns this repository. Ordinary pushes are permitted only
+  when the user asks for a push and the repository's workflow allows it.
 - `client` — someone else owns this repository. Never push any ref.
 
 When a repository's class is unknown or undeclared, treat it as `client`. A new
@@ -21,6 +24,7 @@ repository that nobody has classified yet is therefore push-protected by
 default.
 
 The root workspace repository is `own` unless the project states otherwise.
+This classification does not authorize unsolicited pushes.
 
 ## Remote pushes
 
@@ -29,19 +33,19 @@ The root workspace repository is `own` unless the project states otherwise.
 - Do not push any ref (branch or tag) to any remote of a `client` repository.
   The existence of a remote, a configured upstream, write access, or a general
   request to "push" is not permission.
-- For an `own` repository, ordinary pushes are allowed and still must pass every
-  check in this document.
+- For an `own` repository, ordinary pushes are permitted only after a user
+  request to push, and still must pass every check in this document.
 - Permission to push never implies permission to force-push or delete refs —
   those require the separate, explicit permission described next.
 
-## Keep this workspace out of other people's repositories
+## Keep this workspace out of work repositories
 
 - Never commit or push this workspace's coordination artifacts into a repository
   under `repos/`, regardless of class. This includes `AGENTS.md`, `CLAUDE.md`,
   `.agents/`, `.claude/`, and anything from `workspace-meta/`.
 - Run `python3 tooling/repos_status.py` before committing inside a repository
   under `repos/`. It reports pending coordination artifacts that would otherwise
-  reach someone else's history.
+  reach a work repository's history.
 - Inspect the staged change set before every commit in a repository you do not
   own, and confirm every path belongs to the task the user asked for.
 
@@ -59,7 +63,7 @@ The root workspace repository is `own` unless the project states otherwise.
   ```
 
 - Without that separate statement, treat force push and remote ref deletion as
-  prohibited even for an `own` repository whose ordinary pushes are allowed.
+  prohibited even for an `own` repository whose ordinary pushes are permitted.
 - Never force-push or delete a ref in a `client` repository.
 - Never use a force push to resolve a rejected push (e.g. a non-fast-forward
   error). Stop and report the conflict instead of overriding it.
@@ -158,6 +162,7 @@ The root workspace repository is `own` unless the project states otherwise.
 - Branch-name mismatches, relying on a mismatched upstream as a push
   destination, and unscoped force pushes or ref deletion remain prohibited in
   every class unless separately and explicitly granted.
-- A repository under `repos/` may carry its own contributing guide or workflow
-  documentation. Follow it in addition to this policy; where they conflict, stop
-  and ask the user rather than choosing one.
+- A repository under `repos/`, or under another documented source root, may
+  carry its own contributing guide or workflow documentation. Follow it in
+  addition to this policy; where they conflict, stop and ask the user rather
+  than choosing one.

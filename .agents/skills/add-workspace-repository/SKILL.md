@@ -1,11 +1,11 @@
 ---
 name: add-workspace-repository
-description: Onboard one repository into the workspace end to end — place it under `repos/`, set its Git tracking mode in `.gitignore`, classify it as `own` or `client` in `AGENTS.md`, and register it in the Repository Catalog. Use when adding, cloning, or adopting a repository, or when `repos_status.py` reports a `gitlink` or `untracked` state. Do not use merely to edit the catalog, which `$manage-repository-catalog` owns.
+description: Onboard one catalog v1 repository into the default `repos/` source area end to end — place it under `repos/`, set its Git tracking mode in `.gitignore`, classify it as `own` or `client` in `AGENTS.md`, and register it in the Repository Catalog. Use when adding, cloning, or adopting a repository under `repos/`, or when `repos_status.py` reports a `gitlink` or `untracked` state. Do not use merely to edit the catalog, which `$manage-repository-catalog` owns.
 ---
 
 # Add Workspace Repository
 
-Adding a repository touches four places that must agree: the directory under `repos/`, the root `.gitignore`, the repository class in `AGENTS.md`, and the Repository Catalog. Getting one wrong is silent, so drive all of them together and verify with `repos_status.py`.
+Adding a repository under catalog schema v1 touches four places that must agree: the directory under `repos/`, the root `.gitignore`, the repository class in `AGENTS.md`, and the Repository Catalog. Getting one wrong is silent, so drive all of them together and verify with `repos_status.py`.
 
 ## Tracking modes
 

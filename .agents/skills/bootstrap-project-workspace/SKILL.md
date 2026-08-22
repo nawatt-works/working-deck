@@ -20,7 +20,6 @@ Bootstrap captures the project's **posture**, not its repository list. A new pro
    - Language for conversation and human-facing output such as `README.md`; default Thai. Instruction files stay in English regardless of this answer, so do not ask about them.
    - Default repository class for repositories under `repos/`; default `client`.
    - Whether the root workspace repository may be pushed to a remote; default yes, class `own`.
-   - Whether repositories in this project usually carry their own Git checkout or are usually plain directories tracked by the root repository; default their own Git checkout.
 4. Rename `AGENTS_EXAMPLE.md` to `AGENTS.md` with `git mv` so the project keeps exactly one instruction file.
 5. Fill the Repository Classes section in `AGENTS.md` with the answers. Record the default class and the root workspace class. Leave the per-repository table empty when no repository differs from the default.
 6. Adjust only the human-facing half of the Language section in `AGENTS.md` when the user chose a language other than the starter default. Leave the instruction-file half unchanged, and do not translate `AGENTS.md`, `GIT_POLICY.md`, or any `SKILL.md`.

@@ -13,7 +13,7 @@ maintain the workspace itself.
 - Never store anything that grants access to a system — secrets, access tokens, credentials, private keys, session material, or connection strings containing a password. The test: if this leaked, could someone use it to act as a person or reach a system?
 - Names or handles of people involved in the work may be stored when they are part of a work record, such as who reviewed or approved something. Keep only what the work needs; do not collect contact details without a reason.
 - Read `workspace-meta/README.md` before creating a new file in it.
-- Files at the root of `workspace-meta/` are shared and require a contract first. When an artifact references a repository, reference it by `repo_id` rather than by path unless the relevant contract explicitly says otherwise.
+- Files at the root of `workspace-meta/` are shared. Create or edit them when the user asks, when following that file's contract, or when adding a new workspace metadata type together with its contract and appropriate validation. When an artifact references a repository, reference it by `repo_id` rather than by path unless the relevant contract explicitly says otherwise.
 - Work that will cross to another role may go into `workspace-meta/handoff/<work_id>/`, where write permission is set by stage, because a handoff document is written for someone else to act on. Read `workspace-meta/handoff/README.md` before creating or continuing a work item.
 - A stage file has exactly one writing role. Respond by writing your own stage file, never by editing another role's, and act only on a document whose `status` is `ready`.
 - Work you finish yourself does not go through `handoff/`. Keep it in the owning harness or workflow's normal artifact location.
@@ -54,13 +54,13 @@ maintain the workspace itself.
 
 ## AI harness isolation
 
-- The root workspace is the coordination area between the user and the AI; `repos/*` holds external repositories.
+- The root workspace is the coordination area between the user and the AI; `repos/*` and any other documented source roots hold work repositories.
 - Files and directories used for user-AI collaboration in this workspace belong only in the root workspace, in `workspace-meta/`, or in a documented harness-owned location at the root workspace.
-- Never add, copy, or generate this workspace's AI harness configuration into `repos/*` unless the user asks for a change to that repository directly.
+- Never add, copy, or generate this workspace's AI harness configuration into a work repository unless the user asks for a change to that repository directly.
 - Files that must not be added without an explicit instruction include `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/`, and configuration serving a similar purpose.
-- AI harness configuration that already exists inside `repos/*` belongs to that external repository. Never edit, delete, rename, or overwrite it unless the user asks for a change to that file directly.
-- Never deliberately adopt AI harness configuration found inside `repos/*` as coordination configuration for the root workspace. Preventing a provider from loading those files automatically must be handled per provider.
-- Never store or commit private notes, plans, prompts, evaluation evidence, handoff records, or coordination artifacts inside `repos/*`.
+- AI harness configuration that already exists inside a work repository belongs to that repository. Never edit, delete, rename, or overwrite it unless the user asks for a change to that file directly.
+- Never deliberately adopt AI harness configuration found inside a work repository as coordination configuration for the root workspace. Preventing a provider from loading those files automatically must be handled per provider.
+- Never store or commit private notes, plans, prompts, evaluation evidence, handoff records, or coordination artifacts inside a work repository.
 - Before committing inside any repository, verify that no root workspace artifact or AI harness configuration has entered the change set unintentionally.
 
 ## Workspace tooling
@@ -88,9 +88,10 @@ maintain the workspace itself.
 
 ## Git workflow
 
-Before pushing or changing an upstream in the root workspace or in a repository
-under `repos/`, read and follow `GIT_POLICY.md` along with any more specific
-instructions belonging to the target repository.
+Push or change an upstream only when the user asks for that remote write.
+Before doing so in the root workspace, in a repository under `repos/`, or in any
+other source root this project documents, read and follow `GIT_POLICY.md` along
+with any more specific instructions belonging to the target repository.
 
 ### Repository classes
 

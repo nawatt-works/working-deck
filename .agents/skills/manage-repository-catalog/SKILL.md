@@ -5,7 +5,7 @@ description: Create, inspect, reconcile, and update the authoritative Repository
 
 # Manage Repository Catalog
 
-Maintain the canonical inventory of repositories known to the project workspace. Keep access policy, indexing configuration, integrations, and generated knowledge outside this catalog.
+Maintain the canonical inventory of repositories known to the project workspace for catalog schema v1, where catalog paths are direct children under `repos/`. Keep access policy, indexing configuration, integrations, and generated knowledge outside this catalog.
 
 ## Terminology
 

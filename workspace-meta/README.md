@@ -26,8 +26,9 @@ workspace-meta/
 ตั้งใจให้เป็นของกลาง เช่น Repository Catalog, handoff contract หรือ file instance
 ที่มี contract ชัดเจน
 
-ไฟล์ที่ระดับ `workspace-meta/` root เป็นของกลาง แก้ได้เฉพาะเมื่อผู้ใช้ร้องขอหรือเมื่อ
-ทำตาม workflow ที่ contract ของไฟล์นั้นกำหนดไว้
+ไฟล์ที่ระดับ `workspace-meta/` root เป็นของกลาง แก้ได้เมื่อผู้ใช้ร้องขอ เมื่อทำตาม
+workflow ที่ contract ของไฟล์นั้นกำหนดไว้ หรือเมื่อกำลังเพิ่ม workspace metadata
+ชนิดใหม่พร้อมกติกาและเครื่องมือตรวจที่เหมาะสมกับงานนั้น
 
 `handoff/` เป็นพื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่
 ต่างกัน สิทธิ์เขียนที่นั่นกำหนดด้วย stage ไม่ใช่ตำแหน่ง artifact ของ producer เพราะเอกสารส่งต่อถูกเขียน
@@ -36,9 +37,10 @@ workspace-meta/
 
 ### 2. ของที่ shared ต้องมี contract
 
-ไฟล์จะขึ้นมาอยู่ระดับ `workspace-meta/` root ได้ก็ต่อเมื่อมี contract และ validator
-ใน `contracts/` แล้ว ห้าม promote ไฟล์ขึ้นมาเป็นของกลางโดยยังไม่มี
-schema และเครื่องมือตรวจ
+ไฟล์จะขึ้นมาอยู่ระดับ `workspace-meta/` root ได้เมื่อเป็น shared workspace metadata
+ที่ตั้งใจให้หลาย producer อ้างร่วมกัน ต้องมี contract อยู่ใน `contracts/` หรือเพิ่ม
+contract นั้นในงานเดียวกัน หากรูปแบบไฟล์ต้องให้ automation อ่าน ควรมี schema หรือ
+validator ที่ตรวจได้ด้วย
 
 การที่ producer อื่นอยากอ่าน artifact หนึ่งไม่ใช่เหตุผลเพียงพอที่จะย้าย artifact
 นั้นเข้ามาใน `workspace-meta/` หาก artifact นั้นเป็น output ของ harness ที่มี
