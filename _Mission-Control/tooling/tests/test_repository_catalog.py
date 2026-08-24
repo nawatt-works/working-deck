@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from tooling.repository_catalog import (
+TOOLING = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLING))
+
+from repository_catalog import (  # noqa: E402
     CatalogError,
     discover_repository_paths,
     find_uncataloged_paths,

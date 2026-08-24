@@ -30,15 +30,18 @@ except ImportError:
     )
 
 
-ROOT = Path(__file__).resolve().parents[1]
-CATALOG = ROOT / "workspace-meta" / "repositories.yaml"
+MISSION_CONTROL = Path(__file__).resolve().parents[1]
+WORKSPACE_ROOT = MISSION_CONTROL.parent
+CATALOG = MISSION_CONTROL / "workspace-meta" / "repositories.yaml"
 
 # ไฟล์และโฟลเดอร์ที่เป็น coordination artifact ของ root workspace
 # การพบสิ่งเหล่านี้ใน change set ของ repository ภายนอกถือว่าผิดปกติเสมอ
 ARTIFACT_NAMES = frozenset(
     {"AGENTS.md", "AGENTS.override.md", "CLAUDE.md", "GIT_POLICY.md"}
 )
-ARTIFACT_DIRS = frozenset({".agents", ".claude", "workspace-meta", "workbench"})
+ARTIFACT_DIRS = frozenset(
+    {".agents", ".claude", "_Mission-Control", "workspace-meta", "workbench"}
+)
 
 STATE_OK_EXTERNAL = "external"
 STATE_OK_INTERNAL = "internal"
@@ -68,7 +71,7 @@ def is_ignored_by_root(relative_path: str) -> bool:
     """Return whether the root repository ignores the given workspace path."""
     result = subprocess.run(
         ["git", "check-ignore", "-q", relative_path],
-        cwd=ROOT,
+        cwd=WORKSPACE_ROOT,
         capture_output=True,
         check=False,
     )
@@ -149,7 +152,7 @@ def git_summary(repo: Path) -> str:
 
 
 def inspect(relative_path: str) -> dict[str, object]:
-    directory = ROOT / relative_path
+    directory = WORKSPACE_ROOT / relative_path
     if not directory.is_dir():
         return {"path": relative_path, "state": STATE_MISSING}
 
@@ -167,7 +170,7 @@ def main() -> int:
     try:
         repositories = load_catalog(CATALOG)
         cataloged = {entry["path"] for entry in repositories}
-        discovered = discover_repository_paths(ROOT)
+        discovered = discover_repository_paths(WORKSPACE_ROOT)
     except (CatalogError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

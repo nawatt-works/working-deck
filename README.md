@@ -2,7 +2,7 @@
 
 Workspace สำหรับทำงานร่วมกันระหว่างมนุษย์กับ AI บนหลาย Git repositories โดยแยก metadata และ coordination contracts ออกจาก source code ของแต่ละ repository อย่างชัดเจน
 
-root repository นี้ทำหน้าที่เป็น control plane สำหรับเก็บแนวทางการทำงาน เครื่องมือ และ workspace-level metadata ที่ใช้ร่วมกับ AI ส่วนตัวงานจริงและ supporting repositories อยู่ใน `repos/` ซึ่งเป็น default source area ของ catalog schema v1 และส่วนใหญ่เป็น Git repository อิสระจาก root workspace แต่บางโฟลเดอร์อาจถูก track ไปกับ root ได้
+root repository นี้แบ่งพื้นที่ชัดเจนระหว่าง `_Mission-Control/` ซึ่งเป็น control plane สำหรับ metadata, contracts และ automation ระดับ workspace กับ `repos/` ซึ่งเป็น execution area ของตัวงานจริงและ supporting repositories โดย `repos/` เป็น default source area ของ catalog schema v1 และแต่ละโฟลเดอร์อาจมี Git ของตัวเองหรือถูก track ไปกับ root workspace ก็ได้
 
 Working Deck เป็น workspace starter สำหรับนำโครงสร้างและไฟล์ที่จำเป็นไปใช้เป็นฐานของ project อื่น ไม่ใช่ application project
 
@@ -11,7 +11,7 @@ Working Deck เป็น workspace starter สำหรับนำโครง
 1. คัดลอกไฟล์และโฟลเดอร์ของ Working Deck ที่ต้องใช้ไปยัง project ใหม่ โดยไม่เอา `.git` และไฟล์ local ที่ไม่เกี่ยวข้องไปด้วย
 2. ใช้ `$bootstrap-project-workspace` ตอบคำถามเกี่ยวกับ project แล้ว skill จะเปลี่ยน `AGENTS_EXAMPLE.md` เป็น `AGENTS.md` พร้อมบันทึก default repository class
 3. ใช้ `$add-workspace-repository` ทีละ repository เมื่อมี repository เข้ามา ทั้งตอนเริ่มและระหว่างพัฒนา
-4. ตรวจผลด้วย `python3 tooling/repos_status.py`
+4. ตรวจผลด้วย `python3 _Mission-Control/tooling/repos_status.py`
 
 ขั้นที่ 2 เก็บเฉพาะ posture ของ project ไม่ใช่รายชื่อ repository เพราะตอนเริ่มมักยังไม่รู้ว่าจะมี repository อะไรบ้าง และ repository จะทยอยเพิ่มระหว่างพัฒนา
 
@@ -35,11 +35,11 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 
 ## แนวทางการทำงานประจำวัน
 
-1. ตรวจ `workspace-meta/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
+1. ตรวจ `_Mission-Control/workspace-meta/repositories.yaml` เพื่อหา `repo_id` และ path ของ repository เป้าหมาย
 2. ค้นหาโค้ดจาก workspace root ได้โดยตรง แต่ต้องเปลี่ยน working directory เข้า repository ก่อนเรียก Git, test runner หรือ build
-3. ใช้ `workspace-meta/` เฉพาะ metadata หรือ contract กลางของ workspace ส่วน artifact ของ harness ให้เก็บตาม convention ของ harness นั้น และไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
+3. ใช้ `_Mission-Control/workspace-meta/` เฉพาะ metadata หรือ contract กลางของ workspace ส่วน artifact ของ harness ให้เก็บตาม convention ของ harness นั้น และไฟล์ชั่วคราวให้ใช้ temporary directory ของ harness หรือระบบ
 4. ตรวจ Git status ภายใน repository เป้าหมายก่อน commit
-5. รัน `python3 tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
+5. รัน `python3 _Mission-Control/tooling/repos_status.py` ก่อน commit ใน repository ภายนอก และเมื่อจบงานที่แก้หลาย repository
 
 แนวทางฉบับเต็มที่ AI อ่านอยู่ใน `AGENTS_EXAMPLE.md` ซึ่งจะกลายเป็น `AGENTS.md` หลัง bootstrap
 
@@ -54,30 +54,45 @@ Catalog ใน starter เริ่มด้วย `repositories: []` ซึ่�
 ├── .ignore                  # ให้เครื่องมือค้นหามองเห็น repos/ ที่ Git ignore
 ├── .agents/
 │   └── skills/              # skills ที่เป็นของ root workspace
-├── workspace-meta/
-│   ├── README.md            # กติกาของ workspace metadata กลาง
-│   ├── repositories.yaml    # Repository Catalog instance
-│   ├── handoff/             # งานที่ส่งต่อระหว่าง producer ต่าง role
-│   └── contracts/           # shared contracts สำหรับ consumers
-├── repos/                   # workspace repositories
-└── tooling/                 # automation สำหรับดูแล root workspace
+├── _Mission-Control/        # control plane ของ workspace
+│   ├── AGENTS.md            # กติกาเฉพาะ Mission Control
+│   ├── README.md            # boundary และแนวทางใช้งาน
+│   ├── workspace-meta/
+│   │   ├── repositories.yaml
+│   │   ├── handoff/
+│   │   └── contracts/
+│   └── tooling/             # automation สำหรับดูแล workspace
+└── repos/                   # workspace repositories / execution area
 ```
 
-### `workspace-meta/`
+### `_Mission-Control/`
+
+เป็น control plane ที่รวม metadata, contracts และ automation ระดับ workspace
+ไว้เป็นกลุ่มเดียว โดยไม่รวม production source code หรือ repository-owned artifacts
+
+ไฟล์ที่ harness ต้องค้นพบจาก root เช่น `AGENTS.md`, `GIT_POLICY.md`, `.agents/`
+หรือ directory อื่นที่ provider กำหนดตำแหน่งไว้ ยังคงอยู่ที่ root ได้และไม่ถือว่า
+ขัดกับ boundary นี้
+
+การทำงานไม่จำเป็นต้องผ่าน multi-agent หรือสร้างแผนและ handoff ทุกครั้ง งานสามารถ
+ทำโดย AI harness ตัวเดียวได้ ส่วน planning, handoff และ delegation ใช้เมื่อมีการ
+ส่งต่องานข้าม role, session หรือ automation จริง
+
+### `_Mission-Control/workspace-meta/`
 
 เก็บ metadata และ contract กลางที่ Working Deck เป็นเจ้าของเอง เช่น Repository Catalog, handoff contract และ contract อื่นที่ต้องให้หลาย harness หรือ automation อ้างร่วมกัน
 
 ข้อมูลในพื้นที่นี้เป็นของ root workspace และต้องไม่ถูกคัดลอกหรือ commit เข้า external repositories โดยอัตโนมัติ
 
-`workspace-meta/` ไม่ใช่พื้นที่บังคับสำหรับ notes, plans, prompts หรือ artifact ทั้งหมดที่ AI สร้างขึ้น หาก harness ใดมีตำแหน่งและ format ของตัวเอง เช่น `.agents/`, `.claude/`, `.cursor/` หรือ `.my-harness/` ให้ใช้ convention ของ harness นั้นได้ และให้ producer อื่นอ่านจากตำแหน่งนั้นตาม contract/convention ของเจ้าของ artifact
+`_Mission-Control/workspace-meta/` ไม่ใช่พื้นที่บังคับสำหรับ notes, plans, prompts หรือ artifact ทั้งหมดที่ AI สร้างขึ้น หาก harness ใดมีตำแหน่งและ format ของตัวเอง เช่น `.agents/`, `.claude/`, `.cursor/` หรือ `.my-harness/` ให้ใช้ convention ของ harness นั้นได้ และให้ producer อื่นอ่านจากตำแหน่งนั้นตาม contract/convention ของเจ้าของ artifact
 
-### `workspace-meta/handoff/`
+### `_Mission-Control/workspace-meta/handoff/`
 
 พื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่ต่างกัน เช่น ตัวที่ออกแบบและวางแผน ตัวที่ implement และตัวที่ตรวจสอบผล ใช้เมื่อรู้ว่างานจะข้าม producer เท่านั้น ส่วนงานที่ทำจบในตัวเองให้ใช้ตำแหน่ง artifact ตาม convention ของ harness หรือ workflow นั้น
 
 เอกสารส่งต่อถูกเขียนให้คนอื่นเอาไปทำต่อ เจ้าของจึงเป็นตัวงานไม่ใช่ผู้เขียน สิทธิ์เขียนจึงกำหนดด้วย stage — หนึ่งหน่วยงานคือหนึ่งโฟลเดอร์ `<work_id>/` ภายในมีไฟล์ `<NN>-<stage>.md` ที่แต่ละไฟล์มีผู้เขียนได้ role เดียว
 
-`status` ใน frontmatter เป็นตัวบอกว่า producer ตัวถัดไปลงมือทำตามได้หรือยัง มีเฉพาะ `ready` เท่านั้นที่ทำตามได้ กติกาทั้งหมดอยู่ใน `workspace-meta/handoff/README.md` และรูปแบบไฟล์อยู่ใน `workspace-meta/contracts/handoff/`
+`status` ใน frontmatter เป็นตัวบอกว่า producer ตัวถัดไปลงมือทำตามได้หรือยัง มีเฉพาะ `ready` เท่านั้นที่ทำตามได้ กติกาทั้งหมดอยู่ใน `_Mission-Control/workspace-meta/handoff/README.md` และรูปแบบไฟล์อยู่ใน `_Mission-Control/workspace-meta/contracts/handoff/`
 
 พื้นที่นี้เป็นสายพาน ไม่ใช่คลังประวัติ เมื่องานจบให้ย้ายเฉพาะสิ่งที่ยังมีผลบังคับต่อออกไปเก็บที่อื่น แล้วลบโฟลเดอร์หน่วยงานนั้นได้
 
@@ -91,22 +106,22 @@ root Git repository ignore เนื้อหาภายใต้ `repos/` เ�
 
 บาง project มีโฟลเดอร์ใต้ `repos/` ที่ไม่มี Git ของตัวเองและควรถูก commit ไปกับ root workspace กรณีนี้ให้ opt-in ทีละรายการด้วย `!repos/<ชื่อโฟลเดอร์>/` ใน `.gitignore` ทั้งสองแบบเป็นสถานะที่ถูกต้อง รายละเอียดอยู่ในหัวข้อการติดตามสถานะ
 
-ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `workspace-meta/repositories.yaml`
+ในเอกสารของ workspace นี้ คำว่า **workspace repository** หรือ **repo** หมายถึง direct child directory ใต้ `repos/` ส่วน **cataloged repository** หมายถึง repo ที่มีรายการอยู่ใน `_Mission-Control/workspace-meta/repositories.yaml`
 
 คำว่า repository ที่พบภายใน source code เช่น repository pattern, data repository, `Repository<T>` หรือ class ที่ลงท้ายด้วย `Repository` เป็นแนวคิดภายในตัวงาน ไม่ถือเป็น workspace repository หรือ cataloged repository
 
-### `tooling/`
+### `_Mission-Control/tooling/`
 
 เก็บ automation ที่ดูแล root workspace เครื่องมือในพื้นที่นี้ต้องไม่เขียนไฟล์ลง work repository เช่น `repos/*` หรือ source root อื่นที่ project กำหนดไว้ เว้นแต่ผู้ใช้ร้องขอให้แก้ตัวงานใน repository นั้นอย่างชัดเจน
 
 - `validate_repository_catalog.py` ตรวจ workspace-level Repository Catalog contract และความครบถ้วนของ direct child ใต้ `repos/`
 - `repos_status.py` รายงานสถานะ Git ของทุก repository ตรวจ tracking state และเตือนเมื่อพบ coordination artifact ค้างอยู่ใน change set ของ work repository
-- `validate_handoff.py` ตรวจเอกสารใน `workspace-meta/handoff/` ว่าชื่อหน่วยงาน ชื่อไฟล์ stage และ frontmatter ตรงกันและอ้าง `repo_id` ที่มีอยู่จริง
+- `validate_handoff.py` ตรวจเอกสารใน `_Mission-Control/workspace-meta/handoff/` ว่าชื่อหน่วยงาน ชื่อไฟล์ stage และ frontmatter ตรงกันและอ้าง `repo_id` ที่มีอยู่จริง
 - `repository_catalog.py` และ `handoff.py` เป็น dependency-free contract parser และ validation library ที่ tooling อื่นนำไปใช้ร่วมกันได้
 
 ## Repository Catalog
 
-ไฟล์ `workspace-meta/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
+ไฟล์ `_Mission-Control/workspace-meta/repositories.yaml` เป็น authoritative catalog ของ repositories ทั้งหมดที่เป็นสมาชิกของ project workspace และเป็นจุดอ้างอิงกลางสำหรับ automation กับ knowledge files อื่น:
 
 ```yaml
 schema_version: 1
@@ -122,7 +137,7 @@ repositories:
 - `repo_id` — stable identity ที่ไม่ซ้ำในรูปแบบ `repo_<snake_case_name>` สำหรับให้ไฟล์อื่นอ้างอิง
 - `path` — relative path ที่ไม่ซ้ำและต้องเป็น direct child ภายใต้ `repos/`
 
-schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่ นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `workspace-meta/contracts/repository-catalog/`
+schema version 1 รองรับเฉพาะ `repo_id` และ `path` เพื่อให้ catalog เก็บเฉพาะ identity กับข้อเท็จจริงที่ค่อนข้างคงที่ นิยาม contract, machine-readable schema และ compatibility rules อยู่ที่ `_Mission-Control/workspace-meta/contracts/repository-catalog/`
 
 Catalog ดูแลเรื่องสมาชิกภาพอย่างเดียว ไม่ตัดสินว่า repository นั้นมี Git ของตัวเองหรือไม่ AI มีสิทธิ์เข้าถึงแค่ไหน ต้องถูก index หรือไม่ หรือเป็น application source code หรือเปล่า repository ที่เป็น test environment, documentation, agent skill หรือ extension จึงอยู่ใน catalog ได้
 
@@ -136,7 +151,7 @@ Catalog ดูแลเรื่องสมาชิกภาพอย่าง
 `git status` ที่ workspace root ตอบไม่ได้ว่างานใน `repos/` ถูกบันทึกแล้วหรือยัง เพราะเนื้อหาใต้ `repos/` ถูก ignore ใช้คำสั่งนี้แทน:
 
 ```bash
-python3 tooling/repos_status.py
+python3 _Mission-Control/tooling/repos_status.py
 ```
 
 เครื่องมือนี้รายงานสถานะ Git ของทุก repository พร้อมตรวจสองอย่างที่ root มองไม่เห็น
@@ -154,7 +169,7 @@ python3 tooling/repos_status.py
 
 การตัดสิน tracking state เป็นหน้าที่ของเครื่องมือนี้เท่านั้น เพราะต้องดู `.gitignore` ประกอบด้วย `validate_repository_catalog.py` จึงไม่ตัดสินเรื่องนี้และไม่เตือนเมื่อ repository ไม่มี `.git`
 
-**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ work repository เพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `workspace-meta/` ที่กำลังจะถูก commit เข้า repository งาน
+**coordination artifact ที่รั่วออก** — สแกน change set ที่ยัง pending ในแต่ละ work repository เพื่อหาไฟล์อย่าง `AGENTS.md`, `CLAUDE.md`, `.agents/`, `.claude/` และ `_Mission-Control/` ที่กำลังจะถูก commit เข้า repository งาน
 
 ตรวจเฉพาะไฟล์ที่ยัง pending โดยตั้งใจ ไฟล์ที่ commit ไปแล้วถือเป็นทรัพย์สินของ repository นั้น เช่น AI harness configuration ที่ทีมเจ้าของใช้งานอยู่ ซึ่งไม่ใช่การรั่วไหล
 
@@ -206,25 +221,25 @@ workspace แยกภาษาออกเป็นสองเรื่อง�
 ตรวจ Repository Catalog ตาม contract โดยไม่ผูกกับ consumer ใด:
 
 ```bash
-python3 tooling/validate_repository_catalog.py
+python3 _Mission-Control/tooling/validate_repository_catalog.py
 ```
 
 ตรวจ tracking state และ coordination artifact leak ของ repositories:
 
 ```bash
-python3 tooling/repos_status.py
+python3 _Mission-Control/tooling/repos_status.py
 ```
 
-ตรวจเอกสารใน `workspace-meta/handoff/` ตาม contract:
+ตรวจเอกสารใน `_Mission-Control/workspace-meta/handoff/` ตาม contract:
 
 ```bash
-python3 tooling/validate_handoff.py
+python3 _Mission-Control/tooling/validate_handoff.py
 ```
 
 รัน automated tests ของ contract และ tooling:
 
 ```bash
-python3 -m unittest discover -s tooling/tests
+python3 -m unittest discover -s _Mission-Control/tooling/tests
 ```
 
 ## สิ่งที่จะออกแบบเพิ่มเติม

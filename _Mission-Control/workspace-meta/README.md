@@ -11,7 +11,7 @@ workspace เป็นเจ้าของเอง และต้องกา
 ## โครงสร้าง
 
 ```text
-workspace-meta/
+_Mission-Control/workspace-meta/
 ├── README.md              # กติกาของพื้นที่ metadata กลาง
 ├── repositories.yaml      # shared — Repository Catalog
 ├── handoff/               # shared — งานที่ส่งต่อระหว่าง producer
@@ -22,28 +22,28 @@ workspace-meta/
 
 ### 1. เก็บเฉพาะข้อมูลกลางที่ Working Deck เป็นเจ้าของ
 
-ไฟล์ใน `workspace-meta/` ต้องเป็น metadata, contract หรือ state ที่ workspace
+ไฟล์ใน `_Mission-Control/workspace-meta/` ต้องเป็น metadata, contract หรือ state ที่ workspace
 ตั้งใจให้เป็นของกลาง เช่น Repository Catalog, handoff contract หรือ file instance
 ที่มี contract ชัดเจน
 
-ไฟล์ที่ระดับ `workspace-meta/` root เป็นของกลาง แก้ได้เมื่อผู้ใช้ร้องขอ เมื่อทำตาม
+ไฟล์ที่ระดับ `_Mission-Control/workspace-meta/` root เป็นของกลาง แก้ได้เมื่อผู้ใช้ร้องขอ เมื่อทำตาม
 workflow ที่ contract ของไฟล์นั้นกำหนดไว้ หรือเมื่อกำลังเพิ่ม workspace metadata
 ชนิดใหม่พร้อมกติกาและเครื่องมือตรวจที่เหมาะสมกับงานนั้น
 
 `handoff/` เป็นพื้นที่ส่งต่องานระหว่าง producer ที่ทำหน้าที่
 ต่างกัน สิทธิ์เขียนที่นั่นกำหนดด้วย stage ไม่ใช่ตำแหน่ง artifact ของ producer เพราะเอกสารส่งต่อถูกเขียน
 ให้คนอื่นเอาไปทำต่อ เจ้าของจึงเป็นตัวงานไม่ใช่ผู้เขียน กติกาอยู่ใน
-`workspace-meta/handoff/README.md`
+`_Mission-Control/workspace-meta/handoff/README.md`
 
 ### 2. ของที่ shared ต้องมี contract
 
-ไฟล์จะขึ้นมาอยู่ระดับ `workspace-meta/` root ได้เมื่อเป็น shared workspace metadata
+ไฟล์จะขึ้นมาอยู่ระดับ `_Mission-Control/workspace-meta/` root ได้เมื่อเป็น shared workspace metadata
 ที่ตั้งใจให้หลาย producer อ้างร่วมกัน ต้องมี contract อยู่ใน `contracts/` หรือเพิ่ม
 contract นั้นในงานเดียวกัน หากรูปแบบไฟล์ต้องให้ automation อ่าน ควรมี schema หรือ
 validator ที่ตรวจได้ด้วย
 
 การที่ producer อื่นอยากอ่าน artifact หนึ่งไม่ใช่เหตุผลเพียงพอที่จะย้าย artifact
-นั้นเข้ามาใน `workspace-meta/` หาก artifact นั้นเป็น output ของ harness ที่มี
+นั้นเข้ามาใน `_Mission-Control/workspace-meta/` หาก artifact นั้นเป็น output ของ harness ที่มี
 ตำแหน่งและ contract ของตัวเอง ให้ producer อื่นอ่านจากตำแหน่งนั้นตาม convention
 ของ harness เจ้าของ
 

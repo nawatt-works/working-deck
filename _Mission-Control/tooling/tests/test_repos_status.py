@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import sys
 import unittest
+from pathlib import Path
 
-from tooling.repos_status import (
+TOOLING = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLING))
+
+from repos_status import (  # noqa: E402
     STATE_GITLINK,
     STATE_OK_EXTERNAL,
     STATE_OK_INTERNAL,
@@ -34,9 +39,23 @@ class ArtifactHitsTest(unittest.TestCase):
         )
 
     def test_flags_coordination_directories(self) -> None:
-        entries = [("??", ".claude/settings.json"), ("A ", "workspace-meta/plan.md")]
+        entries = [
+            ("??", ".claude/settings.json"),
+            ("A ", "_Mission-Control/workspace-meta/plan.md"),
+        ]
         self.assertEqual(
-            artifact_hits(entries), [".claude/settings.json", "workspace-meta/plan.md"]
+            artifact_hits(entries),
+            [".claude/settings.json", "_Mission-Control/workspace-meta/plan.md"],
+        )
+
+    def test_flags_legacy_control_plane_directories(self) -> None:
+        entries = [
+            ("??", "workspace-meta/plan.md"),
+            ("A ", "workbench/output.json"),
+        ]
+        self.assertEqual(
+            artifact_hits(entries),
+            ["workbench/output.json", "workspace-meta/plan.md"],
         )
 
     def test_ignores_ordinary_source_changes(self) -> None:

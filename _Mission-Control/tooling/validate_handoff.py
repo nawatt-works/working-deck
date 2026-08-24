@@ -14,9 +14,9 @@ except ImportError:
     from repository_catalog import CatalogError, load_catalog  # type: ignore[no-redef]
 
 
-ROOT = Path(__file__).resolve().parents[1]
-HANDOFF = ROOT / "workspace-meta" / "handoff"
-CATALOG = ROOT / "workspace-meta" / "repositories.yaml"
+MISSION_CONTROL = Path(__file__).resolve().parents[1]
+HANDOFF = MISSION_CONTROL / "workspace-meta" / "handoff"
+CATALOG = MISSION_CONTROL / "workspace-meta" / "repositories.yaml"
 
 
 def main() -> int:

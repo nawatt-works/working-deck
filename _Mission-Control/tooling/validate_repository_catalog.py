@@ -24,15 +24,16 @@ except ImportError:
     )
 
 
-ROOT = Path(__file__).resolve().parents[1]
-CATALOG = ROOT / "workspace-meta" / "repositories.yaml"
+MISSION_CONTROL = Path(__file__).resolve().parents[1]
+WORKSPACE_ROOT = MISSION_CONTROL.parent
+CATALOG = MISSION_CONTROL / "workspace-meta" / "repositories.yaml"
 
 
 def main() -> int:
     try:
         repositories = load_catalog(CATALOG)
         uncataloged_paths = find_uncataloged_paths(
-            repositories, discover_repository_paths(ROOT)
+            repositories, discover_repository_paths(WORKSPACE_ROOT)
         )
         if uncataloged_paths:
             paths = ", ".join(uncataloged_paths)
@@ -43,7 +44,7 @@ def main() -> int:
         print(f"error: {error}", file=sys.stderr)
         return 2
 
-    for warning in repository_warnings(ROOT, repositories):
+    for warning in repository_warnings(WORKSPACE_ROOT, repositories):
         print(f"warning: {warning}", file=sys.stderr)
     print(f"ok: {CATALOG}")
     return 0

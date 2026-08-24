@@ -1,10 +1,10 @@
 # Handoff Contract
 
-Contract นี้กำหนดรูปแบบและความหมายของเอกสารใน `workspace-meta/handoff/` สำหรับ
+Contract นี้กำหนดรูปแบบและความหมายของเอกสารใน `_Mission-Control/workspace-meta/handoff/` สำหรับ
 Project Workspace ที่สร้างจาก Working Deck โดยไม่ผูกกับ producer ใด producer หนึ่ง
 
 กติกาการทำงานของพื้นที่ เช่น หน่วยงานเกิดเมื่อไหร่และใครกำหนด `work_id` อยู่ที่
-`workspace-meta/handoff/README.md` ส่วนไฟล์นี้กำหนดเฉพาะรูปแบบที่เครื่องมือตรวจได้
+`_Mission-Control/workspace-meta/handoff/README.md` ส่วนไฟล์นี้กำหนดเฉพาะรูปแบบที่เครื่องมือตรวจได้
 
 ## Ownership
 
@@ -18,11 +18,11 @@ Project Workspace ที่สร้างจาก Working Deck โดยไม
 
 ### Work item
 
-- หนึ่งหน่วยงานคือหนึ่ง direct child directory ใต้ `workspace-meta/handoff/`
+- หนึ่งหน่วยงานคือหนึ่ง direct child directory ใต้ `_Mission-Control/workspace-meta/handoff/`
 - ชื่อ directory คือ `work_id` ซึ่งต้องตรงกับ `YYYYMMDD-<kebab-slug>` และส่วน
   วันที่ต้องเป็นวันที่ที่มีอยู่จริงตามปฏิทิน
 - หน่วยงานต้องมี stage file อย่างน้อยหนึ่งไฟล์ · directory ที่ว่างถือว่าผิด
-- ไฟล์ที่ระดับ root ของ `workspace-meta/handoff/` ที่ไม่ใช่ `README.md` ถือว่าผิด
+- ไฟล์ที่ระดับ root ของ `_Mission-Control/workspace-meta/handoff/` ที่ไม่ใช่ `README.md` ถือว่าผิด
 
 ### Stage file
 
@@ -41,7 +41,7 @@ stage file ต้องขึ้นต้นด้วย YAML frontmatter ที
 - `stage` — required · ต้องตรงกับส่วน `<stage>` ในชื่อไฟล์
 - `status` — required · `draft`, `ready` หรือ `superseded`
 - `author` — required · ชื่อ producer เป็น kebab-case
-- `repos` — optional · list ของ `repo_id` ที่มีอยู่จริงใน `workspace-meta/repositories.yaml`
+- `repos` — optional · list ของ `repo_id` ที่มีอยู่จริงใน `_Mission-Control/workspace-meta/repositories.yaml`
 
 ตัวอย่าง:
 
@@ -61,7 +61,7 @@ validator จับกรณีที่ไฟล์ถูกย้ายหร�
 
 ไฟล์ `schema.json` เป็น machine-readable schema ของ frontmatter ส่วนกฎที่ต้องดู
 ชื่อไฟล์ ชื่อ directory และ Repository Catalog ประกอบ ตรวจด้วย
-`tooling/validate_handoff.py`
+`_Mission-Control/tooling/validate_handoff.py`
 
 ## Compatibility
 

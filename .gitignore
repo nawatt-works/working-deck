@@ -9,5 +9,5 @@ repos/*
 
 # repo ที่ไม่มี .git ของตัวเอง ต้อง opt-in ทีละรายการที่นี่
 # ไม่งั้นงานจะไม่ถูก track ทั้งใน root และในตัวมันเอง
-# ตรวจด้วย python3 tooling/repos_status.py
+# ตรวจด้วย python3 _Mission-Control/tooling/repos_status.py
 # !repos/<ชื่อโฟลเดอร์>/

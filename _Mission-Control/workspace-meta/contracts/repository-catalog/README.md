@@ -1,6 +1,6 @@
 # Repository Catalog Contract
 
-Contract นี้กำหนดรูปแบบและความหมายของ `workspace-meta/repositories.yaml` สำหรับ
+Contract นี้กำหนดรูปแบบและความหมายของ `_Mission-Control/workspace-meta/repositories.yaml` สำหรับ
 Project Workspace ที่สร้างจาก Working Deck โดยไม่ผูกกับ consumer ใด consumer หนึ่ง
 
 ## Ownership
@@ -19,7 +19,7 @@ Catalog ต้องมี `schema_version: 1` และ `repositories` ซึ�
 
 direct child directory ทุกแห่งใต้ `repos/` ต้องอยู่ใน Catalog แต่ Catalog entry สามารถมีอยู่ก่อน checkout บนเครื่องปัจจุบันได้
 
-ไฟล์ `schema.json` เป็น machine-readable schema ส่วนกฎ uniqueness ระหว่างรายการและความสอดคล้องกับ directory จริงตรวจด้วย `tooling/validate_repository_catalog.py`
+ไฟล์ `schema.json` เป็น machine-readable schema ส่วนกฎ uniqueness ระหว่างรายการและความสอดคล้องกับ directory จริงตรวจด้วย `_Mission-Control/tooling/validate_repository_catalog.py`
 
 ## Compatibility
 

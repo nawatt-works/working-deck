@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from tooling.handoff import (
+TOOLING = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLING))
+
+from handoff import (  # noqa: E402
     HandoffError,
     document_errors,
     parse_frontmatter,

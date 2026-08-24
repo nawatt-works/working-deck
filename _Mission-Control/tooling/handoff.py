@@ -1,9 +1,9 @@
 """Dependency-free Handoff contract parser and validator.
 
-`workspace-meta/handoff/` เป็นพื้นที่ที่สิทธิ์เขียนกำหนดด้วย stage
+`_Mission-Control/workspace-meta/handoff/` เป็นพื้นที่ที่สิทธิ์เขียนกำหนดด้วย stage
 แทนตำแหน่ง artifact ปกติของ producer เอกสารจึงต้องบอกได้ด้วยตัวเองว่าเป็นของหน่วยงานใด
 stage ใด และพร้อมให้ producer ตัวถัดไปลงมือทำตามหรือยัง โมดูลนี้ตรวจข้อตกลง
-เหล่านั้นตาม contract ที่ workspace-meta/contracts/handoff/
+เหล่านั้นตาม contract ที่ `_Mission-Control/workspace-meta/contracts/handoff/`
 """
 
 from __future__ import annotations

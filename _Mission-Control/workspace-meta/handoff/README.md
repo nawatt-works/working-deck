@@ -7,12 +7,12 @@
 พื้นที่นี้เป็น **สายพาน ไม่ใช่คลังประวัติ** ห้ามใครอ้างอิงไฟล์ในนี้เป็นแหล่งความจริง
 ถาวร ของที่ยังมีผลบังคับต้องถูกย้ายออกไปเมื่องานจบ
 
-รูปแบบไฟล์และ schema อยู่ที่ `workspace-meta/contracts/handoff/`
+รูปแบบไฟล์และ schema อยู่ที่ `_Mission-Control/workspace-meta/contracts/handoff/`
 
 ## โครงสร้าง
 
 ```text
-workspace-meta/handoff/
+_Mission-Control/workspace-meta/handoff/
 ├── README.md
 └── <work_id>/
     ├── 00-brief.md            # ผู้เปิดงาน (ไม่บังคับ)
@@ -43,7 +43,7 @@ workspace-meta/handoff/
   วันแรกตลอด
 - **ต้องแจ้ง `work_id` กลับให้ผู้ใช้ทันทีที่สร้าง** ไม่งั้นผู้ใช้จะสั่งงาน producer
   ตัวถัดไปไม่ถูกเพราะไม่รู้ว่าหน่วยงานชื่ออะไร
-- ก่อนสร้างหน่วยงานใหม่ **ต้องดูรายการใน `workspace-meta/handoff/` ก่อนเสมอ** ถ้ามี
+- ก่อนสร้างหน่วยงานใหม่ **ต้องดูรายการใน `_Mission-Control/workspace-meta/handoff/` ก่อนเสมอ** ถ้ามี
   หน่วยงานที่ยังไม่ปิดและครอบคลุมเรื่องเดียวกัน ให้ต่อของเดิม ห้ามเปิดใหม่
 - ถ้าชื่อชนกันจริง (วันเดียวกัน slug เดียวกัน) ให้ต่อท้ายด้วย `-2`
 
@@ -77,5 +77,5 @@ workspace-meta/handoff/
 ## ตรวจสอบ
 
 ```bash
-python3 tooling/validate_handoff.py
+python3 _Mission-Control/tooling/validate_handoff.py
 ```

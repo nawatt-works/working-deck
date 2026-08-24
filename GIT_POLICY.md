@@ -42,8 +42,8 @@ This classification does not authorize unsolicited pushes.
 
 - Never commit or push this workspace's coordination artifacts into a repository
   under `repos/`, regardless of class. This includes `AGENTS.md`, `CLAUDE.md`,
-  `.agents/`, `.claude/`, and anything from `workspace-meta/`.
-- Run `python3 tooling/repos_status.py` before committing inside a repository
+  `.agents/`, `.claude/`, and anything from `_Mission-Control/`.
+- Run `python3 _Mission-Control/tooling/repos_status.py` before committing inside a repository
   under `repos/`. It reports pending coordination artifacts that would otherwise
   reach a work repository's history.
 - Inspect the staged change set before every commit in a repository you do not
