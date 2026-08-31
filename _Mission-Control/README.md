@@ -19,16 +19,19 @@ _Mission-Control/
     └── tests/
 ```
 
-- `git-safety.yaml` จัดทุก repository เป็น `client` โดย default และเก็บเฉพาะ path ที่ผู้ใช้ยืนยันว่าเป็น `own`
-- `git_guard.py status` ตรวจ repositories, branches, upstreams, pending coordination artifacts และ hook state
+- `git-safety.yaml` ลงทะเบียน exact workspace-relative path และ `client`/`own` class ของทุก work repository
+- Work repositories วางที่ใดก็ได้ใต้ workspace ยกเว้น `_Mission-Control/`; `repos/` เป็น default convention เท่านั้น
+- Repository ที่ค้นพบแต่ยังไม่ลงทะเบียน fail closed เป็น `client`
+- `git_guard.py status` ตรวจ registry, repository discovery, root ignore, branches, upstreams, pending coordination artifacts และ hook state
 - `git_guard.py install` ติดตั้ง pre-push guard โดยไม่เขียนทับ hook configuration เดิม
-- `hooks/pre-push` เป็น template ที่ installer นำไปวางใน Git directory ซึ่งไม่ถูก commit เข้า work repository
+- `hooks/pre-push` เป็น template ที่ installer ฝัง absolute workspace path ลงใน local hook เพื่อไม่เชื่อถือไฟล์จาก work repository; เมื่อย้าย workspace ต้องติดตั้งใหม่
 
 กฎ remote write ฉบับเต็มอยู่ที่ `GIT_POLICY.md` ที่ workspace root
 
 ## Boundary
 
-- Source code, tests และ configuration ของตัวงานอยู่ใน `repos/<name>/`
+- Source code, tests และ configuration ของตัวงานอยู่ใน registered work repository ไม่ว่าจะใช้ path ใด
+- ห้ามวาง work repository ใต้ `_Mission-Control/`
 - Tooling ที่ดูแลหลาย repositories อยู่ใน `_Mission-Control/tooling/`
 - Instructions สำหรับ workspace ปลายทางเริ่มจาก `AGENTS_EXAMPLE.md` และยัง inert จนกว่าผู้ใช้จะ rename หรือทำ symlink เอง
 - Temporary files ใช้ temporary directory ของระบบหรือ harness

@@ -1,7 +1,12 @@
 .DS_Store
 __pycache__/
 
-# Every direct child is an independent Git repository or linked worktree.
-# Keeping the entire area ignored prevents accidental gitlinks in the root repo.
+# repos/ is the default location for independent work repositories.
+# Ignoring it prevents accidental gitlinks in the root repository.
 repos/*
 !repos/.gitkeep
+
+# Repositories outside repos/ must be ignored by exact workspace-relative path.
+# Examples:
+# /clients/acme/legacy-api/
+# /internal-tools/release-cli/

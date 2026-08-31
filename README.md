@@ -11,53 +11,98 @@ Working Deck ไม่ใช่ application และไม่บังคับ
 ├── AGENTS_EXAMPLE.md             # instruction template แบบ inert
 ├── GIT_POLICY.md                 # กฎ Git safety กลาง
 ├── README.md
-├── .gitignore                    # root Git ignore ทุกอย่างใต้ repos/
-├── .ignore                       # ทำให้ค้นจาก root แล้วเห็นโค้ดใต้ repos/
+├── .gitignore                    # ป้องกัน nested repositories จาก root Git
+├── .ignore                       # ทำให้ search tools เห็น source ที่ root Git ignore
 ├── _Mission-Control/
 │   ├── README.md                 # landing page ของ Mission Control
-│   ├── git-safety.yaml           # own-repository allowlist
+│   ├── git-safety.yaml           # registry และ class ของ work repositories
 │   ├── hooks/pre-push            # hook template
 │   └── tooling/git_guard.py      # status และ hook installer
-└── repos/                        # independent Git repositories/worktrees
+└── repos/                        # ตำแหน่งปกติที่เลือกใช้ได้ ไม่ใช่ข้อบังคับ
 ```
 
 ## `AGENTS_EXAMPLE.md`
 
-ไฟล์นี้ตั้งใจใช้ชื่อที่ agent harness ไม่ auto-load เพื่อให้สามารถพัฒนา Working Deck ได้โดยไม่เผลอรับ instructions ของ workspace ปลายทาง
+ไฟล์นี้ตั้งใจใช้ชื่อที่ agent harness ไม่ auto-load เพื่อให้พัฒนา Working Deck ได้โดยไม่เผลอรับ instructions ของ workspace ปลายทาง
 
 ผู้ใช้เป็นผู้ rename หรือสร้าง symlink เป็น `AGENTS.md`, `CLAUDE.md` หรือชื่ออื่นตาม discovery mechanism ของ harness ที่ใช้งาน Working Deck จะไม่สร้างหรือเปลี่ยน symlink เหล่านี้เอง
 
-## `repos/`
+## ตำแหน่งของ work repositories
 
-ทุก direct child ใต้ `repos/` ต้องเป็น Git working tree หรือ linked worktree ที่เป็นอิสระจาก root Git repository:
+Repository วางที่ใดก็ได้ภายใน workspace ยกเว้นใต้ `_Mission-Control/` โดย `repos/` เป็นเพียง default convention สำหรับกรณีที่ไม่มีข้อกำหนดด้าน layout
+
+รองรับทั้งแบบไม่แบ่งกลุ่ม:
 
 ```text
-repos/customer-api/
+repos/order-api/
 repos/customer-web/
-repos/my-tools/
 ```
 
-root Git ignore `repos/*` ทั้งหมด จึงไม่เกิด gitlink และไม่ผสม history, branch, staging area หรือ tooling ของ work repositories เข้ากับ Working Deck
+แบบแบ่งกลุ่ม:
 
-ใช้ `rg` หรือ `fd` ค้นจาก workspace root ได้ตามปกติ เพราะ `.ignore` เปิดให้ search tools มองเห็น `repos/*` โดยไม่เปลี่ยนพฤติกรรมของ Git
+```text
+repos/customer-a/api/
+repos/customer-a/web/
+repos/internal/my-tools/
+```
 
-## Git safety model
+และ path ที่อยู่นอก `repos/`:
 
-Repository ทุกแห่งใต้ `repos/` ถูกจัดเป็น `client` โดยอัตโนมัติ ซึ่งหมายถึงห้ามเขียนขึ้น remote ทุกกรณี
+```text
+clients/acme/legacy-api/
+internal-tools/release-cli/
+```
 
-Repository ของผู้ใช้ที่อนุญาตให้ push ได้ต้องถูกเพิ่มใน `_Mission-Control/git-safety.yaml` อย่างชัดเจน:
+Grouping folder ไม่มี `.git` และไม่ต้องลงทะเบียน ตัว repository จริงต้องเป็น Git top-level working tree หรือ linked worktree ห้ามใช้ symlink แทน repository path
+
+Git Safety ค้น repository แบบ recursive ทั่ว workspace โดยข้าม `_Mission-Control/` และหยุดค้นลึกเมื่อพบ Git repository หนึ่งแห่ง จึงไม่ตีความ source folders ภายใน repository เป็น workspace repositories
+
+## Git safety registry
+
+ทุก work repository ต้องลงทะเบียนใน `_Mission-Control/git-safety.yaml` ด้วย exact workspace-relative path และ class:
 
 ```yaml
 schema_version: 1
 default_class: client
 
-own_repositories:
-  - repos/my-tools
+repositories:
+  - path: repos/customer-a/api
+    class: client
+
+  - path: repos/internal/my-tools
+    class: own
+
+  - path: internal-tools/release-cli
+    class: own
 ```
 
-กฎของแต่ละ class อยู่ใน `GIT_POLICY.md` การอยู่ใน `own_repositories` ไม่ใช่คำสั่งให้ push แต่หมายความว่าสามารถ push แบบปกติได้เมื่อผู้ใช้สั่งและ workflow ของ repository อนุญาต
+- `client` — repository ของลูกค้าหรือบุคคลอื่น ห้ามเขียนขึ้น remote
+- `own` — repository ของผู้ใช้ push แบบปกติได้เมื่อผู้ใช้สั่งและ workflow ของ repository อนุญาต
+- Repository ที่ค้นพบแต่ยังไม่ลงทะเบียนถูกถือเป็น `client` และ `status` รายงาน error
+- รายการที่ยังไม่มี checkout บนเครื่องปัจจุบันถูกเก็บไว้และรายงาน warning
+- linked worktree ที่ไม่ได้ลงทะเบียนแยกจะสืบทอด class จาก registered path ที่ใช้ Git common directory เดียวกัน
 
-linked worktree ที่ใช้ Git common directory เดียวกับ path ที่เป็น `own` จะสืบทอด class เดียวกัน ส่วน clone แยกที่มี `.git` คนละชุดต้องเพิ่ม allowlist แยก
+Registry นี้มีหน้าที่เฉพาะ Git safety ไม่มี `repo_id`, remote URL, description, integrations หรือ metadata สำหรับระบบอื่น
+
+## ป้องกัน root Git จาก nested repositories
+
+ถ้า workspace root เป็น Git repository ทุก work repository ต้องถูก root ignore มิฉะนั้นการ `git add` อาจสร้าง gitlink
+
+`repos/*` ถูก ignore เป็นค่าเริ่มต้น ส่วน repository ที่อยู่นอก `repos/` ให้เพิ่ม exact path:
+
+```gitignore
+/clients/acme/legacy-api/
+/internal-tools/release-cli/
+```
+
+หากต้องการค้น source จาก workspace root ให้เพิ่ม path เดียวกันแบบ negation ใน `.ignore`:
+
+```gitignore
+!/clients/acme/legacy-api/
+!/internal-tools/release-cli/
+```
+
+`git_guard.py status` ตรวจ root ignore ให้ แต่ไม่แก้ `.gitignore` หรือ `.ignore` อัตโนมัติ
 
 ## ตรวจ workspace
 
@@ -67,47 +112,49 @@ python3 _Mission-Control/tooling/git_guard.py status
 
 คำสั่งนี้ตรวจ:
 
-- direct child ทุกแห่งเป็น Git working tree จริง
-- path ใน own allowlist ยังมีอยู่และถูกต้อง
-- class ของแต่ละ repository
+- registry syntax, paths และ classes
+- registered checkout, missing checkout และ unregistered repositories
+- repository path เป็น Git top-level จริงและไม่ใช่ symlink
+- root Git ignore nested repository ทุกแห่ง
 - branch, pending changes และ upstream mismatch
-- coordination artifacts ที่กำลังจะหลุดเข้า work repository
+- coordination artifacts ที่ควรตรวจทานก่อน commit
 - สถานะของ optional pre-push guard
 
 ## ติดตั้ง pre-push guard
 
-ติดตั้งให้ทุก repository:
+ติดตั้งให้ทุก checkout ที่ค้นพบหรือถูกลงทะเบียน:
 
 ```bash
 python3 _Mission-Control/tooling/git_guard.py install
 ```
 
-หรือติดตั้งเฉพาะแห่ง:
+หรือติดตั้งเฉพาะ path:
 
 ```bash
-python3 _Mission-Control/tooling/git_guard.py install repos/customer-api
+python3 _Mission-Control/tooling/git_guard.py install clients/acme/legacy-api
 ```
 
-Guard ทำงานที่ระดับ Git จึงใช้กับ Pi, Codex, Claude, terminal และ Git client อื่นเหมือนกัน โดย:
+Installer ฝัง absolute path ของ workspace ปัจจุบันไว้ใน local hook จึงรองรับ repository ที่อยู่ตำแหน่งหรือความลึกใดก็ได้โดยไม่เชื่อถือไฟล์จาก work repository หากย้าย workspace ต้องรัน `install` อีกครั้งเพื่ออัปเดต hook Guard ทำงานที่ระดับ Git กับ Pi, Codex, Claude, terminal และ Git clients อื่นเหมือนกัน
 
-- บล็อกทุก push จาก `client`
+Guard:
+
+- บล็อกทุก push จาก `client` และ unregistered repository
 - บล็อก remote ref deletion
 - บล็อก branch-name mismatch และ non-fast-forward update
 - บล็อกการย้าย remote tag เดิม
 
-Installer ไม่เขียนทับ pre-push hook หรือ `core.hooksPath` ที่ repository มีอยู่แล้ว
-
-Hook เป็นเพียง accident guard เพราะข้ามได้ด้วย `--no-verify` และป้องกัน local destructive commands ไม่ได้ read-only credentials กับ server-side permissions จึงยังเป็น hard security boundary ที่ควรใช้กับ repositories ของลูกค้า
+Installer ไม่เขียนทับ pre-push hook หรือ `core.hooksPath` ที่ repository มีอยู่แล้ว Hook เป็นเพียง accident guard เพราะข้ามได้ด้วย `--no-verify` และป้องกัน local destructive commands ไม่ได้ read-only credentials กับ server-side permissions จึงยังเป็น hard security boundary สำหรับ repositories ของลูกค้า
 
 ## การเพิ่ม repository
 
-1. Clone หรือสร้าง linked worktree เป็น direct child ใต้ `repos/`
-2. ถือว่าเป็น `client` จนกว่าผู้ใช้จะยืนยันว่าเป็น repository ของตน
-3. หากเป็น `own` ให้เพิ่ม path ใน `_Mission-Control/git-safety.yaml`
-4. รัน `git_guard.py status`
-5. ติดตั้ง pre-push guard หากไม่ชนกับ hook เดิม
+1. Clone หรือสร้าง linked worktree ใน path ที่ project ต้องการ
+2. เพิ่ม exact path และ class ใน `_Mission-Control/git-safety.yaml`
+3. ถ้า root workspace เป็น Git ให้เพิ่ม exact path ใน `.gitignore`; `repos/*` มีค่าเริ่มต้นให้แล้ว
+4. เพิ่ม negation ใน `.ignore` เมื่อต้องการค้นจาก workspace root
+5. รัน `git_guard.py status`
+6. ติดตั้ง pre-push guard หากไม่ชนกับ hook เดิม
 
-Working Deck ไม่แก้ไฟล์ภายใน work repository เพื่อ onboarding และไม่เก็บ remote URL, credentials หรือ repository catalog
+Working Deck ไม่แก้ source หรือ repository-owned configuration เพื่อ onboarding และไม่เก็บ credentials
 
 ## ตรวจ automated tests
 

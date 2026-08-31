@@ -1,6 +1,7 @@
 schema_version: 1
 default_class: client
 
-# Every Git repository under repos/ is a client repository unless listed here.
-# Add a path only after the user confirms that ordinary pushes may be made from it.
-own_repositories: []
+# Register every work repository with its workspace-relative path and class.
+# Paths may live anywhere below the workspace except _Mission-Control/.
+# A discovered but unregistered repository is treated as client and reported as an error.
+repositories: []

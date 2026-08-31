@@ -1,23 +1,27 @@
 # Git Policy
 
-These rules apply to the root workspace and every Git repository under `repos/`.
-They protect customer repositories from remote writes and prevent destructive Git
-operations from being inferred from an ordinary coding request.
+These rules apply to the root workspace and every registered or discovered work
+repository, regardless of its location. They protect customer repositories from
+remote writes and prevent destructive Git operations from being inferred from
+an ordinary coding request.
 
-## Repository classes
+## Repository registry and classes
 
 `_Mission-Control/git-safety.yaml` is the source of repository classification.
-Every repository under `repos/` is `client` unless its path is explicitly listed
-in `own_repositories` or it is a linked worktree sharing the Git common directory
-of an explicitly listed path.
+Every work repository has an exact workspace-relative `path` and one class:
 
 - `client` — owned by a customer or another party. Remote writes are prohibited.
 - `own` — owned by the user. An ordinary push is possible only when the user asks
   for that push and the repository's own workflow permits it.
 - Root workspace — treated as `own`, but never pushed without a user request.
 
-Never add a path to `own_repositories` by inference. Ask the user when ownership
-is unknown.
+A discovered repository missing from the registry is treated as `client`. Never
+register or change a repository to `own` by inference; ask the user when
+ownership is unknown.
+
+A linked worktree may inherit the class of a registered path sharing its Git
+common directory. A separate clone has a different Git directory and requires
+its own registry entry.
 
 ## Safe local work
 
@@ -43,13 +47,12 @@ alternatives and stop when unrelated local changes would be overwritten.
 
 ## Remote writes
 
-### Client repositories
+### Client and unregistered repositories
 
 Never push a branch, tag, deletion, or any other ref to any remote. Credentials,
 an existing upstream, or a generic request to "push" do not override this rule.
-If the user appears to request a client push, report that the repository is
-classified as `client` and ask them to change the classification deliberately if
-it is incorrect.
+If the classification is incorrect, the user must deliberately update the
+registry before any remote write.
 
 ### Own repositories and root workspace
 
@@ -72,9 +75,9 @@ Push a tag only with an exact tag refspec.
 ## Force push and remote deletion
 
 Force pushes, moving an existing remote tag, and deleting any remote ref are
-prohibited for `client` repositories. For `own` repositories they require a
-separate explicit instruction for the exact repository and ref; ordinary push
-permission does not include them.
+prohibited for `client` and unregistered repositories. For `own` repositories
+they require a separate explicit instruction for the exact repository and ref;
+ordinary push permission does not include them.
 
 The Working Deck pre-push guard intentionally blocks these operations. Do not
 bypass it with `--no-verify`. If an exceptional destructive remote operation is
@@ -88,20 +91,35 @@ Install the optional guard with:
 python3 _Mission-Control/tooling/git_guard.py install
 ```
 
-It applies at Git level across agent harnesses and interactive tools, but it is
-an accident guard rather than a security boundary: hooks can be bypassed or
-removed. Use read-only credentials and server-side permissions for customer
-repositories whenever possible.
+It applies at Git level across agent harnesses and interactive tools. The
+installer pins the current absolute workspace path into the local hook, so
+repository depth and location do not affect it and repository-owned files cannot
+redirect the guard. Reinstall hooks after moving the workspace.
+
+The guard is an accident barrier rather than a security boundary: hooks can be
+bypassed or removed. Use read-only credentials and server-side permissions for
+customer repositories whenever possible.
 
 The installer refuses to overwrite an existing pre-push hook or configured
 `core.hooksPath`. Resolve such conflicts deliberately rather than replacing a
 repository-owned workflow.
 
+## Root Git isolation
+
+When the workspace root is a Git repository, every nested work repository must
+be ignored by root Git. Otherwise staging it may create a gitlink. The default
+`repos/*` pattern covers the conventional area; every repository elsewhere
+needs an exact anchored `.gitignore` entry.
+
+Run Git Safety status after adding or moving a repository. Do not weaken root
+ignore rules merely to make search tools see source; use an exact negation in
+`.ignore` instead.
+
 ## Keep workspace coordination out of work repositories
 
 Do not add Working Deck instructions, plans, prompts, private notes, or
-`_Mission-Control/` content to a repository under `repos/` unless the user asks
-to change that repository-owned file directly.
+`_Mission-Control/` content to a work repository unless the user asks to change
+that repository-owned file directly.
 
 Before committing in a work repository, run `git_guard.py status` and inspect the
 staged paths. Existing committed harness configuration belongs to that

@@ -1,3 +1,8 @@
-# Search tools should see work repositories even though the root Git ignores them.
-# Use * rather than ** so each repository's own ignore rules still apply.
+# Search tools should see work repositories even when the root Git ignores them.
+# Using * rather than ** preserves each nested repository's own ignore rules.
 !repos/*
+
+# Add exact negations for registered repositories outside repos/ when needed.
+# Examples:
+# !/clients/acme/legacy-api/
+# !/internal-tools/release-cli/
