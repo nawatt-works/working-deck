@@ -1,13 +1,7 @@
 .DS_Store
 __pycache__/
 
-# repos/ ถูก ignore เป็นค่าเริ่มต้น
-# repo ที่มี .git ของตัวเอง ถ้า commit เข้า root จะกลายเป็น gitlink mode 160000
-# ซึ่ง clone root repo มาแล้วโฟลเดอร์นั้นจะว่างเปล่า
+# Every direct child is an independent Git repository or linked worktree.
+# Keeping the entire area ignored prevents accidental gitlinks in the root repo.
 repos/*
 !repos/.gitkeep
-
-# repo ที่ไม่มี .git ของตัวเอง ต้อง opt-in ทีละรายการที่นี่
-# ไม่งั้นงานจะไม่ถูก track ทั้งใน root และในตัวมันเอง
-# ตรวจด้วย python3 _Mission-Control/tooling/repos_status.py
-# !repos/<ชื่อโฟลเดอร์>/

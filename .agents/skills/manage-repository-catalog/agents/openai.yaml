@@ -1,4 +1,0 @@
-interface:
-  display_name: "Manage Repository Catalog"
-  short_description: "Keep the repository catalog complete and canonical"
-  default_prompt: "Use $manage-repository-catalog to discover workspace repositories and reconcile the authoritative catalog."

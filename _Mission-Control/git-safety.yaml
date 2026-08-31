@@ -1,0 +1,6 @@
+schema_version: 1
+default_class: client
+
+# Every Git repository under repos/ is a client repository unless listed here.
+# Add a path only after the user confirms that ordinary pushes may be made from it.
+own_repositories: []

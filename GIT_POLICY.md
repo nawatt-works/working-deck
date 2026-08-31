@@ -1,168 +1,108 @@
 # Git Policy
 
-These rules apply to every Git repository reachable from this workspace,
-including the root workspace itself, every repository under `repos/`, and any
-other source root that a project explicitly documents. Their purpose is to
-prevent unintended or destructive remote writes, to keep a local branch from
-pushing to a differently named remote branch, and to keep this workspace's
-coordination artifacts out of work repositories.
+These rules apply to the root workspace and every Git repository under `repos/`.
+They protect customer repositories from remote writes and prevent destructive Git
+operations from being inferred from an ordinary coding request.
 
 ## Repository classes
 
-Every repository belongs to exactly one class. The root `AGENTS.md` declares the
-project's default class and lists any repository that differs, keyed by
-`repo_id` when one exists. Classification lives in the root `AGENTS.md` because
-the AI harness isolation rules forbid adding instruction files inside work
-repositories.
+`_Mission-Control/git-safety.yaml` is the source of repository classification.
+Every repository under `repos/` is `client` unless its path is explicitly listed
+in `own_repositories` or it is a linked worktree sharing the Git common directory
+of an explicitly listed path.
 
-- `own` — the user owns this repository. Ordinary pushes are permitted only
-  when the user asks for a push and the repository's workflow allows it.
-- `client` — someone else owns this repository. Never push any ref.
+- `client` — owned by a customer or another party. Remote writes are prohibited.
+- `own` — owned by the user. An ordinary push is possible only when the user asks
+  for that push and the repository's own workflow permits it.
+- Root workspace — treated as `own`, but never pushed without a user request.
 
-When a repository's class is unknown or undeclared, treat it as `client`. A new
-repository that nobody has classified yet is therefore push-protected by
-default.
+Never add a path to `own_repositories` by inference. Ask the user when ownership
+is unknown.
 
-The root workspace repository is `own` unless the project states otherwise.
-This classification does not authorize unsolicited pushes.
+## Safe local work
 
-## Remote pushes
+Reading, fetching, editing, testing, committing, creating a branch, and creating
+a linked worktree are allowed when they are part of the user's requested work.
+Run Git and repository-specific commands from inside the target repository.
 
-- Fetching and pulling are always allowed. Every restriction here applies only
-  to operations that write to a remote.
-- Do not push any ref (branch or tag) to any remote of a `client` repository.
-  The existence of a remote, a configured upstream, write access, or a general
-  request to "push" is not permission.
-- For an `own` repository, ordinary pushes are permitted only after a user
-  request to push, and still must pass every check in this document.
-- Permission to push never implies permission to force-push or delete refs —
-  those require the separate, explicit permission described next.
+The following operations can discard work or alter repository configuration and
+require a separate, explicit user instruction naming the intended repository and
+operation:
 
-## Keep this workspace out of work repositories
+- `git reset --hard`
+- `git clean -f` in any form
+- `git checkout -- <path>` or `git restore` when it discards changes
+- forced branch deletion such as `git branch -D`
+- deleting a worktree that contains changes
+- changing or removing remotes, upstreams, or Git configuration
+- rewriting published history
 
-- Never commit or push this workspace's coordination artifacts into a repository
-  under `repos/`, regardless of class. This includes `AGENTS.md`, `CLAUDE.md`,
-  `.agents/`, `.claude/`, and anything from `_Mission-Control/`.
-- Run `python3 _Mission-Control/tooling/repos_status.py` before committing inside a repository
-  under `repos/`. It reports pending coordination artifacts that would otherwise
-  reach a work repository's history.
-- Inspect the staged change set before every commit in a repository you do not
-  own, and confirm every path belongs to the task the user asked for.
+A request to implement, fix, commit, switch branches, or "clean things up" does
+not imply permission for these destructive operations. Prefer non-destructive
+alternatives and stop when unrelated local changes would be overwritten.
 
-## Force pushes and ref deletion require separate permission
+## Remote writes
 
-- Force pushing (`--force`, `--force-with-lease`, `--force-if-includes`) and
-  remote ref deletion (`--delete`, or a refspec such as
-  `:refs/heads/<branch>` / `:refs/tags/<tag>`) are destructive, history-altering
-  operations. A plain push override does not grant either.
-- These require their own explicit statement in the root `AGENTS.md`, and may be
-  scoped narrowly, for example:
+### Client repositories
 
-  ```md
-  - `repo_internal_tools` may be force-pushed on `feature/*` branches only.
-  ```
+Never push a branch, tag, deletion, or any other ref to any remote. Credentials,
+an existing upstream, or a generic request to "push" do not override this rule.
+If the user appears to request a client push, report that the repository is
+classified as `client` and ask them to change the classification deliberately if
+it is incorrect.
 
-- Without that separate statement, treat force push and remote ref deletion as
-  prohibited even for an `own` repository whose ordinary pushes are permitted.
-- Never force-push or delete a ref in a `client` repository.
-- Never use a force push to resolve a rejected push (e.g. a non-fast-forward
-  error). Stop and report the conflict instead of overriding it.
+### Own repositories and root workspace
 
-## Branch and upstream names must match
+Push only after the user asks for the specific remote write. Before pushing:
 
-- When a local branch has an upstream, the upstream branch name must exactly
-  match the local branch name. The remote name may differ, but the branch path
-  after `<remote>/` must be identical.
-- Valid examples:
-  - local `main` → `origin/main`
-  - local `master` → `origin/master`
-  - local `feature/example` → `origin/feature/example`
-  - local `feature/example` → `upstream/feature/example`
-- Invalid examples:
-  - local `feature/example` → `origin/main`
-  - local `fix/example` → `origin/feature/example`
-- If the names differ, stop before pushing. Remove the incorrect upstream or
-  replace it with a same-named remote branch. Never push through a mismatched
-  upstream.
+1. Resolve the current branch; do not push from detached HEAD.
+2. Inspect pending and staged changes.
+3. Verify any upstream branch has exactly the same branch name.
+4. Run `python3 _Mission-Control/tooling/git_guard.py status` from the workspace root.
+5. Use an explicit same-named refspec and dry run:
 
-## Ref scope: branches and tags
+   ```bash
+   git push --dry-run <remote> HEAD:refs/heads/<branch>
+   git push <remote> HEAD:refs/heads/<branch>
+   ```
 
-- All restrictions above apply equally to branches (`refs/heads/*`) and tags
-  (`refs/tags/*`). Creating, moving, or deleting a remote tag is a remote write
-  like any other and follows the same default-deny and force/deletion rules.
-- Tags have no upstream-tracking concept, so the branch/upstream name-matching
-  checks do not apply to them. Instead, a tag push must always name the exact,
-  intended tag in an explicit refspec — never rely on `git push --tags` or
-  `--follow-tags`, which push multiple tags implicitly and can leak an
-  unintended tag to the remote.
+Never use a bare `git push`, `--all`, `--mirror`, `--tags`, or `--follow-tags`.
+Push a tag only with an exact tag refspec.
 
-## Creating a branch from another remote branch
+## Force push and remote deletion
 
-- Creating a feature branch from `origin/main`, `origin/master`, or any other
-  differently named remote branch must not inherit that source as its upstream.
-- Explicitly disable tracking when creating it, for example:
+Force pushes, moving an existing remote tag, and deleting any remote ref are
+prohibited for `client` repositories. For `own` repositories they require a
+separate explicit instruction for the exact repository and ref; ordinary push
+permission does not include them.
 
-  ```bash
-  git switch --no-track -c feature/example origin/main
-  ```
+The Working Deck pre-push guard intentionally blocks these operations. Do not
+bypass it with `--no-verify`. If an exceptional destructive remote operation is
+truly required, stop and let the user choose a separately reviewed procedure.
 
-- Immediately verify the result with `git branch -vv`. The new branch's
-  upstream must be absent until its same-named remote branch is created.
+## Pre-push guard
 
-## Checks before every push
+Install the optional guard with:
 
-- Resolve the current local branch name. Do not push from detached HEAD or when
-  the branch name is ambiguous.
-- Resolve the configured upstream, if present, and verify that its branch name
-  exactly matches the current local branch name.
-- Every push must specify an explicit refspec naming the exact ref. Do not run
-  a bare `git push`, and do not use `--all`, `--mirror`, `--tags`, or
-  `--follow-tags` — these depend on `push.default` or act across multiple refs
-  at once, bypassing the explicit-destination checks below.
-- Use a dry run with an explicit same-named destination:
+```bash
+python3 _Mission-Control/tooling/git_guard.py install
+```
 
-  ```bash
-  git push --dry-run <remote> HEAD:refs/heads/<current-local-branch>
-  ```
+It applies at Git level across agent harnesses and interactive tools, but it is
+an accident guard rather than a security boundary: hooks can be bypassed or
+removed. Use read-only credentials and server-side permissions for customer
+repositories whenever possible.
 
-- Inspect the dry-run destination before the real push. Do not proceed if it is
-  not exactly the current local branch name.
-- Perform the real push with the same explicit destination. Add upstream only
-  when needed:
+The installer refuses to overwrite an existing pre-push hook or configured
+`core.hooksPath`. Resolve such conflicts deliberately rather than replacing a
+repository-owned workflow.
 
-  ```bash
-  git push -u <remote> HEAD:refs/heads/<current-local-branch>
-  ```
+## Keep workspace coordination out of work repositories
 
-- After pushing, verify that the same-named remote branch points to local
-  `HEAD`:
+Do not add Working Deck instructions, plans, prompts, private notes, or
+`_Mission-Control/` content to a repository under `repos/` unless the user asks
+to change that repository-owned file directly.
 
-  ```bash
-  git ls-remote <remote> refs/heads/<current-local-branch>
-  git rev-parse HEAD
-  ```
-
-  Compare the two SHAs; the push is only confirmed correct if they match.
-
-## Submodules
-
-- These rules apply independently inside every Git repository, including any
-  Git submodule. A submodule has its own remotes, branches, and upstream
-  tracking distinct from the parent repository — apply every rule above from
-  within the submodule's own working directory before pushing from it, and do
-  not assume a parent-repo override or upstream setup extends to it.
-
-## Scope
-
-- These rules do not prohibit work on or pushes to `main`, `master`, or another
-  branch in an `own` repository, provided that repository's own workflow and the
-  user's request allow the specific push.
-- For a `client` repository, remote pushes remain prohibited regardless of the
-  target branch, the remote name, or the access the credentials happen to grant.
-- Branch-name mismatches, relying on a mismatched upstream as a push
-  destination, and unscoped force pushes or ref deletion remain prohibited in
-  every class unless separately and explicitly granted.
-- A repository under `repos/`, or under another documented source root, may
-  carry its own contributing guide or workflow documentation. Follow it in
-  addition to this policy; where they conflict, stop and ask the user rather
-  than choosing one.
+Before committing in a work repository, run `git_guard.py status` and inspect the
+staged paths. Existing committed harness configuration belongs to that
+repository and must not be edited merely because Working Deck also uses agents.

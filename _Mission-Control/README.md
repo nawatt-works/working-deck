@@ -1,40 +1,37 @@
 # Mission Control
 
-พื้นที่ควบคุมและประสานงานของ project workspace แยกออกจาก repository ที่เป็นตัวงาน
-จริงอย่างชัดเจน
+ศูนย์กลางการทำงานร่วมกันระหว่างผู้ใช้กับ agent harness ในระดับ workspace
 
-Mission Control เป็นเจ้าของ metadata, contracts และ automation ระดับ workspace
-ที่ใช้สนับสนุนการทำงานข้ามหลาย repository แต่ไม่ได้เป็นเจ้าของ source code หรือ
-workflow ภายใน repository เหล่านั้น
+Mission Control อาจเก็บบริบท กฎร่วม เครื่องมือ หรือ artifact ที่ต้องใช้ข้ามหลาย repositories และหลาย harness แต่ไม่ใช่พื้นที่สำหรับ production source code และไม่บังคับให้ทุกงานต้องมี plan, schema, catalog หรือ handoff
 
-## โครงสร้าง
+เพิ่ม capability ใหม่เมื่อมี use case จริงเท่านั้น ไม่สร้างโครงสร้างหรือ contract รอไว้ล่วงหน้า
+
+## ความสามารถปัจจุบัน: Git safety
 
 ```text
 _Mission-Control/
-├── AGENTS.md          # กติกาเฉพาะพื้นที่ Mission Control
-├── README.md          # อธิบายบทบาทและ boundary
-├── workspace-meta/    # shared workspace metadata และ contracts
-└── tooling/           # automation สำหรับดูแล workspace
+├── README.md
+├── git-safety.yaml
+├── hooks/
+│   └── pre-push
+└── tooling/
+    ├── git_guard.py
+    └── tests/
 ```
 
-ไฟล์ instruction และ policy ที่ต้องให้ AI harness ค้นพบจาก workspace root เช่น
-`AGENTS.md` (หรือ `AGENTS_EXAMPLE.md` ก่อน bootstrap), `GIT_POLICY.md` รวมถึง
-directory ที่ harness กำหนดตำแหน่งเอง เช่น `.agents/` ยังคงอยู่ที่ root ไม่จำเป็น
-ต้องย้ายเข้ามาในโฟลเดอร์นี้
+- `git-safety.yaml` จัดทุก repository เป็น `client` โดย default และเก็บเฉพาะ path ที่ผู้ใช้ยืนยันว่าเป็น `own`
+- `git_guard.py status` ตรวจ repositories, branches, upstreams, pending coordination artifacts และ hook state
+- `git_guard.py install` ติดตั้ง pre-push guard โดยไม่เขียนทับ hook configuration เดิม
+- `hooks/pre-push` เป็น template ที่ installer นำไปวางใน Git directory ซึ่งไม่ถูก commit เข้า work repository
 
-## หลักการใช้งาน
+กฎ remote write ฉบับเต็มอยู่ที่ `GIT_POLICY.md` ที่ workspace root
 
-- เก็บ production source code, repository-owned tests, fixtures และ configuration
-  ใน repository ที่เกี่ยวข้องใต้ `repos/`
-- เก็บข้อมูลกลางที่หลาย harness หรือ automation ใช้ร่วมกันใน `workspace-meta/`
-  ตาม contract ของข้อมูลแต่ละชนิด
-- เก็บ automation ของ control plane ใน `tooling/`
-- artifact ที่ harness เป็นเจ้าของให้คงอยู่ในตำแหน่งที่ harness นั้นกำหนด และให้
-  consumer อื่นอ่านจากตำแหน่งดังกล่าวตาม contract หรือ convention ของเจ้าของ
-- ไฟล์ชั่วคราวให้อยู่ใน temporary directory ของ harness หรือระบบ
-- ใช้ planning, handoff หรือ agent delegation เมื่อช่วยให้งานส่งต่อหรือตรวจสอบได้
-  ดีขึ้น ไม่ใช่ขั้นตอนบังคับสำหรับงานทุกประเภท
+## Boundary
 
-การอยู่ใน Mission Control ไม่ได้ให้สิทธิ์ AI อ่าน เขียน execute หรือ push repository
-ใดโดยอัตโนมัติ สิทธิ์และ Git safety ยังคงเป็นไปตาม root instructions,
-`GIT_POLICY.md` และกติกาของ repository เป้าหมาย
+- Source code, tests และ configuration ของตัวงานอยู่ใน `repos/<name>/`
+- Tooling ที่ดูแลหลาย repositories อยู่ใน `_Mission-Control/tooling/`
+- Instructions สำหรับ workspace ปลายทางเริ่มจาก `AGENTS_EXAMPLE.md` และยัง inert จนกว่าผู้ใช้จะ rename หรือทำ symlink เอง
+- Temporary files ใช้ temporary directory ของระบบหรือ harness
+- ห้ามเก็บ secrets, credentials, tokens หรือ private keys ใน Mission Control
+
+Mission Control เป็น extensible collaboration control plane ส่วน Git safety เป็น subsystem แรก ไม่ใช่ขอบเขตสุดท้ายของพื้นที่นี้

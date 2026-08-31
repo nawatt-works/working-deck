@@ -1,0 +1,8 @@
+#!/bin/sh
+# Working Deck Git guard
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+    echo "Working Deck: cannot resolve repository root" >&2
+    exit 1
+}
+workspace_root="$(CDPATH= cd "$repo_root/../.." && pwd)" || exit 1
+exec python3 "$workspace_root/_Mission-Control/tooling/git_guard.py" pre-push "$@"

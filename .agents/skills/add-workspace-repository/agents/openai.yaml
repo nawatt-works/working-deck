@@ -1,4 +1,0 @@
-interface:
-  display_name: "Add Workspace Repository"
-  short_description: "Onboard one repository into the workspace"
-  default_prompt: "Use $add-workspace-repository to add a repository under repos/ and keep .gitignore, AGENTS.md, and the catalog in agreement."
