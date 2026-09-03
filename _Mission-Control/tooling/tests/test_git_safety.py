@@ -10,22 +10,17 @@ from pathlib import Path
 TOOLING = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLING))
 
-from git_guard import (  # noqa: E402
-    HOOK_MARKER,
-    HOOK_ROOT_PLACEHOLDER,
+from git_safety import (  # noqa: E402
     RepositoryRegistration,
     SafetyConfig,
     SafetyError,
+    branch_summary,
     coordination_artifacts,
     discover_repository_paths,
-    hook_path,
-    hook_state,
     inspect_repositories,
-    install_hook,
     is_ignored_by_root,
     parse_config,
     porcelain_entries,
-    validate_push_line,
     validate_repository_path,
     workspace_is_git_root,
 )
@@ -127,7 +122,10 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(SafetyError, "duplicate"):
             parse_config(duplicate)
 
-        nested = duplicate.replace("clients/api\n    class: own", "clients/api/submodule\n    class: own")
+        nested = duplicate.replace(
+            "clients/api\n    class: own",
+            "clients/api/submodule\n    class: own",
+        )
         with self.assertRaisesRegex(SafetyError, "nested"):
             parse_config(nested)
 
@@ -173,7 +171,7 @@ class RepositoryInspectionTest(unittest.TestCase):
         self.assertEqual(repo.repository_class, "client")
         self.assertEqual(repo.registration, "registered")
 
-    def test_unregistered_repository_fails_closed_as_client(self) -> None:
+    def test_unregistered_repository_is_reported_as_client(self) -> None:
         init_repo(self.root / "experiments/prototype")
         inspection = inspect_repositories(self.root, SafetyConfig(()))
         repo = inspection.repositories[0]
@@ -245,7 +243,17 @@ class RootIgnoreTest(unittest.TestCase):
         self.assertFalse(is_ignored_by_root("clients/acme/web", self.root))
 
 
-class ArtifactTest(unittest.TestCase):
+class RepositoryStatusTest(unittest.TestCase):
+    def test_branch_summary_reports_changes_and_no_upstream(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            init_repo(repo)
+            (repo / "new.txt").write_text("new\n", encoding="utf-8")
+            summary, errors = branch_summary(repo)
+            self.assertIn("changes:1", summary)
+            self.assertIn("no-upstream", summary)
+            self.assertEqual(errors, [])
+
     def test_finds_coordination_artifacts(self) -> None:
         entries = [
             ("??", "AGENTS.md"),
@@ -262,123 +270,6 @@ class ArtifactTest(unittest.TestCase):
             init_repo(repo)
             (repo / "file with spaces.txt").write_text("x", encoding="utf-8")
             self.assertIn(("??", "file with spaces.txt"), porcelain_entries(repo))
-
-
-class HookTest(unittest.TestCase):
-    def setUp(self) -> None:
-        self.temporary = tempfile.TemporaryDirectory()
-        root = Path(self.temporary.name)
-        self.repo_path = root / "clients/acme/api"
-        init_repo(self.repo_path)
-        self.info = inspect_repositories(
-            root, SafetyConfig((registration("clients/acme/api"),))
-        ).repositories[0]
-
-    def tearDown(self) -> None:
-        self.temporary.cleanup()
-
-    def test_installs_guard_in_git_directory(self) -> None:
-        self.assertEqual(install_hook(self.info), "installed")
-        self.assertEqual(hook_state(self.info), "installed")
-        text = hook_path(self.info).read_text(encoding="utf-8")
-        self.assertIn(HOOK_MARKER, text)
-        self.assertNotIn(HOOK_ROOT_PLACEHOLDER, text)
-        self.assertIn(str(self.info.workspace_root.resolve()), text)
-        self.assertTrue(os.access(hook_path(self.info), os.X_OK))
-
-    def test_moved_workspace_hook_is_reported_stale(self) -> None:
-        install_hook(self.info)
-        path = hook_path(self.info)
-        text = path.read_text(encoding="utf-8").replace(
-            str(self.info.workspace_root.resolve()), "/moved/workspace"
-        )
-        path.write_text(text, encoding="utf-8")
-        self.assertEqual(hook_state(self.info), "stale")
-
-    def test_install_is_idempotent(self) -> None:
-        install_hook(self.info)
-        self.assertEqual(install_hook(self.info), "already installed")
-
-    def test_refuses_to_replace_existing_hook(self) -> None:
-        path = hook_path(self.info)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-        with self.assertRaisesRegex(SafetyError, "refusing to overwrite"):
-            install_hook(self.info)
-
-    def test_refuses_custom_hooks_path(self) -> None:
-        git(self.repo_path, "config", "core.hooksPath", ".hooks")
-        with self.assertRaisesRegex(SafetyError, "core.hooksPath"):
-            install_hook(self.info)
-
-    def test_workspace_path_is_safely_shell_quoted(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "deck's workspace"
-            repo_path = root / "client"
-            init_repo(repo_path)
-            info = inspect_repositories(
-                root, SafetyConfig((registration("client"),))
-            ).repositories[0]
-            install_hook(info)
-            result = subprocess.run(
-                ["sh", "-n", str(hook_path(info))],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-
-
-class PushValidationTest(unittest.TestCase):
-    ZERO = "0" * 40
-    A = "a" * 40
-    B = "b" * 40
-
-    def test_allows_new_same_named_branch(self) -> None:
-        line = f"refs/heads/feature/x {self.A} refs/heads/feature/x {self.ZERO}"
-        with tempfile.TemporaryDirectory() as temporary:
-            self.assertIsNone(validate_push_line(Path(temporary), line))
-
-    def test_allows_head_to_same_named_branch(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            init_repo(repo)
-            branch = git(repo, "symbolic-ref", "--short", "HEAD")
-            line = f"HEAD {self.A} refs/heads/{branch} {self.ZERO}"
-            self.assertIsNone(validate_push_line(repo, line))
-
-    def test_blocks_branch_name_mismatch(self) -> None:
-        line = f"refs/heads/feature/x {self.A} refs/heads/main {self.ZERO}"
-        with tempfile.TemporaryDirectory() as temporary:
-            error = validate_push_line(Path(temporary), line)
-        self.assertIn("must match", error or "")
-
-    def test_blocks_remote_deletion(self) -> None:
-        line = f"(delete) {self.ZERO} refs/heads/main {self.A}"
-        with tempfile.TemporaryDirectory() as temporary:
-            error = validate_push_line(Path(temporary), line)
-        self.assertIn("deletion", error or "")
-
-    def test_allows_fast_forward_and_blocks_reverse(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            init_repo(repo)
-            first = git(repo, "rev-parse", "HEAD")
-            (repo / "README.md").write_text("next\n", encoding="utf-8")
-            git(repo, "commit", "-q", "-am", "next")
-            second = git(repo, "rev-parse", "HEAD")
-            forward = f"refs/heads/main {second} refs/heads/main {first}"
-            reverse = f"refs/heads/main {first} refs/heads/main {second}"
-            self.assertIsNone(validate_push_line(repo, forward))
-            self.assertIn("non-fast-forward", validate_push_line(repo, reverse) or "")
-
-    def test_allows_new_tag_but_blocks_moving_tag(self) -> None:
-        new = f"refs/tags/v1 {self.A} refs/tags/v1 {self.ZERO}"
-        move = f"refs/tags/v1 {self.A} refs/tags/v1 {self.B}"
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            self.assertIsNone(validate_push_line(repo, new))
-            self.assertIn("moving", validate_push_line(repo, move) or "")
 
 
 if __name__ == "__main__":

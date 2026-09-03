@@ -45,7 +45,7 @@ Run this from the workspace root before committing in a work repository and
 before finishing work that touched multiple repositories:
 
 ```bash
-python3 _Mission-Control/tooling/git_guard.py status
+python3 _Mission-Control/tooling/git_safety.py status
 ```
 
 ## Root Git isolation
@@ -62,7 +62,8 @@ automatically.
 ## Git safety
 
 Read and follow `GIT_POLICY.md` before any remote write or destructive Git
-operation. `_Mission-Control/git-safety.yaml` classifies repositories:
+operation. These rules constrain agent actions, not Git commands the workspace
+owner performs directly. `_Mission-Control/git-safety.yaml` classifies repositories:
 
 - Every registry entry declares `path` and `class: client|own`.
 - An unregistered repository is always treated as `client`.
@@ -79,10 +80,10 @@ For an `own` repository, an ordinary push still requires a user request. Force
 push, remote ref deletion, remote tag movement, destructive local commands, and
 remote or upstream changes require separate explicit instructions.
 
-Never bypass the Working Deck pre-push guard with `--no-verify`. Reinstall hooks
-after moving the workspace because each local hook pins its absolute workspace
-path. The hook is only an accident guard; read-only credentials and server
-permissions remain the hard boundary for customer repositories.
+Git Safety is policy and validation for agents; it does not install a hook or
+restrict Git commands run directly by the workspace owner. Follow the policy
+even though there is no technical interception. Harness-specific enforcement
+may be added later through an extension.
 
 ## Agent collaboration boundaries
 

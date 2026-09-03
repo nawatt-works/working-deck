@@ -12,21 +12,19 @@ Mission Control อาจเก็บบริบท กฎร่วม เค�
 _Mission-Control/
 ├── README.md
 ├── git-safety.yaml
-├── hooks/
-│   └── pre-push
 └── tooling/
-    ├── git_guard.py
+    ├── git_safety.py
     └── tests/
 ```
 
 - `git-safety.yaml` ลงทะเบียน exact workspace-relative path และ `client`/`own` class ของทุก work repository
 - Work repositories วางที่ใดก็ได้ใต้ workspace ยกเว้น `_Mission-Control/`; `repos/` เป็น default convention เท่านั้น
-- Repository ที่ค้นพบแต่ยังไม่ลงทะเบียน fail closed เป็น `client`
-- `git_guard.py status` ตรวจ registry, repository discovery, root ignore, branches, upstreams, pending coordination artifacts และ hook state
-- `git_guard.py install` ติดตั้ง pre-push guard โดยไม่เขียนทับ hook configuration เดิม
-- `hooks/pre-push` เป็น template ที่ installer ฝัง absolute workspace path ลงใน local hook เพื่อไม่เชื่อถือไฟล์จาก work repository; เมื่อย้าย workspace ต้องติดตั้งใหม่
+- Repository ที่ค้นพบแต่ยังไม่ลงทะเบียนถูกจัดเป็น `client` ในรายงาน
+- `git_safety.py status` ตรวจ registry, repository discovery, root ignore, branches, upstreams และ pending coordination artifacts
 
-กฎ remote write ฉบับเต็มอยู่ที่ `GIT_POLICY.md` ที่ workspace root
+Git safety รุ่นนี้เป็น policy และ validation สำหรับ agents เท่านั้น ไม่มี Git hook และไม่จำกัดการใช้ Git หรือ Git GUI ของผู้ใช้ การ enforce เชิงเทคนิคสำหรับ AI อาจเพิ่มภายหลังผ่าน extension ของแต่ละ agent harness
+
+กฎสำหรับ agent remote writes อยู่ที่ `GIT_POLICY.md` ที่ workspace root
 
 ## Boundary
 

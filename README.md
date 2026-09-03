@@ -9,15 +9,14 @@ Working Deck ไม่ใช่ application และไม่บังคับ
 ```text
 .
 ├── AGENTS_EXAMPLE.md             # instruction template แบบ inert
-├── GIT_POLICY.md                 # กฎ Git safety กลาง
+├── GIT_POLICY.md                 # กฎ Git safety สำหรับ agents
 ├── README.md
 ├── .gitignore                    # ป้องกัน nested repositories จาก root Git
 ├── .ignore                       # ทำให้ search tools เห็น source ที่ root Git ignore
 ├── _Mission-Control/
 │   ├── README.md                 # landing page ของ Mission Control
 │   ├── git-safety.yaml           # registry และ class ของ work repositories
-│   ├── hooks/pre-push            # hook template
-│   └── tooling/git_guard.py      # status และ hook installer
+│   └── tooling/git_safety.py     # ตรวจ registry และ repository state
 └── repos/                        # ตำแหน่งปกติที่เลือกใช้ได้ ไม่ใช่ข้อบังคับ
 ```
 
@@ -76,13 +75,21 @@ repositories:
     class: own
 ```
 
-- `client` — repository ของลูกค้าหรือบุคคลอื่น ห้ามเขียนขึ้น remote
-- `own` — repository ของผู้ใช้ push แบบปกติได้เมื่อผู้ใช้สั่งและ workflow ของ repository อนุญาต
+- `client` — repository ของลูกค้าหรือบุคคลอื่น Agents ห้ามเขียนขึ้น remote
+- `own` — repository ของผู้ใช้ Agents push แบบปกติได้เมื่อผู้ใช้สั่งและ workflow ของ repository อนุญาต
 - Repository ที่ค้นพบแต่ยังไม่ลงทะเบียนถูกถือเป็น `client` และ `status` รายงาน error
 - รายการที่ยังไม่มี checkout บนเครื่องปัจจุบันถูกเก็บไว้และรายงาน warning
 - linked worktree ที่ไม่ได้ลงทะเบียนแยกจะสืบทอด class จาก registered path ที่ใช้ Git common directory เดียวกัน
 
 Registry นี้มีหน้าที่เฉพาะ Git safety ไม่มี `repo_id`, remote URL, description, integrations หรือ metadata สำหรับระบบอื่น
+
+## ขอบเขตของการป้องกัน
+
+Git safety ในรุ่นนี้เป็น **policy และ validation สำหรับ agent harness** ไม่ได้ติดตั้ง Git hook และไม่ขัดขวางการใช้ Git, Git GUI หรือการ push ที่ผู้ใช้ทำเอง
+
+การป้องกันขึ้นกับ agent ที่โหลด `AGENTS_EXAMPLE.md` ผ่านชื่อหรือ symlink ที่ผู้ใช้จัดเตรียมและปฏิบัติตาม `GIT_POLICY.md` ส่วน technical enforcement ระดับ agent อาจเพิ่มภายหลังด้วย extension ของแต่ละ harness
+
+`git_safety.py` ตรวจและรายงานสถานะ แต่ไม่ intercept หรือบล็อกคำสั่ง Git
 
 ## ป้องกัน root Git จาก nested repositories
 
@@ -102,12 +109,12 @@ Registry นี้มีหน้าที่เฉพาะ Git safety ไม�
 !/internal-tools/release-cli/
 ```
 
-`git_guard.py status` ตรวจ root ignore ให้ แต่ไม่แก้ `.gitignore` หรือ `.ignore` อัตโนมัติ
+Git Safety ตรวจ root ignore ให้ แต่ไม่แก้ `.gitignore` หรือ `.ignore` อัตโนมัติ
 
 ## ตรวจ workspace
 
 ```bash
-python3 _Mission-Control/tooling/git_guard.py status
+python3 _Mission-Control/tooling/git_safety.py status
 ```
 
 คำสั่งนี้ตรวจ:
@@ -117,33 +124,7 @@ python3 _Mission-Control/tooling/git_guard.py status
 - repository path เป็น Git top-level จริงและไม่ใช่ symlink
 - root Git ignore nested repository ทุกแห่ง
 - branch, pending changes และ upstream mismatch
-- coordination artifacts ที่ควรตรวจทานก่อน commit
-- สถานะของ optional pre-push guard
-
-## ติดตั้ง pre-push guard
-
-ติดตั้งให้ทุก checkout ที่ค้นพบหรือถูกลงทะเบียน:
-
-```bash
-python3 _Mission-Control/tooling/git_guard.py install
-```
-
-หรือติดตั้งเฉพาะ path:
-
-```bash
-python3 _Mission-Control/tooling/git_guard.py install clients/acme/legacy-api
-```
-
-Installer ฝัง absolute path ของ workspace ปัจจุบันไว้ใน local hook จึงรองรับ repository ที่อยู่ตำแหน่งหรือความลึกใดก็ได้โดยไม่เชื่อถือไฟล์จาก work repository หากย้าย workspace ต้องรัน `install` อีกครั้งเพื่ออัปเดต hook Guard ทำงานที่ระดับ Git กับ Pi, Codex, Claude, terminal และ Git clients อื่นเหมือนกัน
-
-Guard:
-
-- บล็อกทุก push จาก `client` และ unregistered repository
-- บล็อก remote ref deletion
-- บล็อก branch-name mismatch และ non-fast-forward update
-- บล็อกการย้าย remote tag เดิม
-
-Installer ไม่เขียนทับ pre-push hook หรือ `core.hooksPath` ที่ repository มีอยู่แล้ว Hook เป็นเพียง accident guard เพราะข้ามได้ด้วย `--no-verify` และป้องกัน local destructive commands ไม่ได้ read-only credentials กับ server-side permissions จึงยังเป็น hard security boundary สำหรับ repositories ของลูกค้า
+- coordination artifacts ที่ agent ควรตรวจทานก่อน commit
 
 ## การเพิ่ม repository
 
@@ -151,8 +132,7 @@ Installer ไม่เขียนทับ pre-push hook หรือ `core.hoo
 2. เพิ่ม exact path และ class ใน `_Mission-Control/git-safety.yaml`
 3. ถ้า root workspace เป็น Git ให้เพิ่ม exact path ใน `.gitignore`; `repos/*` มีค่าเริ่มต้นให้แล้ว
 4. เพิ่ม negation ใน `.ignore` เมื่อต้องการค้นจาก workspace root
-5. รัน `git_guard.py status`
-6. ติดตั้ง pre-push guard หากไม่ชนกับ hook เดิม
+5. รัน `git_safety.py status`
 
 Working Deck ไม่แก้ source หรือ repository-owned configuration เพื่อ onboarding และไม่เก็บ credentials
 

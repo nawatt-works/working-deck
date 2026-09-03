@@ -1,19 +1,25 @@
-# Git Policy
+# Git Policy for Agents
 
-These rules apply to the root workspace and every registered or discovered work
-repository, regardless of its location. They protect customer repositories from
-remote writes and prevent destructive Git operations from being inferred from
-an ordinary coding request.
+These instructions govern Git actions performed by agent harnesses in this
+workspace. They do not restrict the workspace owner using Git, a Git GUI, or
+remote operations directly.
+
+The policy protects customer repositories from accidental agent writes and
+prevents destructive operations from being inferred from an ordinary coding
+request. The current implementation provides policy and validation, not a Git
+hook or technical interception layer.
 
 ## Repository registry and classes
 
 `_Mission-Control/git-safety.yaml` is the source of repository classification.
 Every work repository has an exact workspace-relative `path` and one class:
 
-- `client` — owned by a customer or another party. Remote writes are prohibited.
-- `own` — owned by the user. An ordinary push is possible only when the user asks
-  for that push and the repository's own workflow permits it.
-- Root workspace — treated as `own`, but never pushed without a user request.
+- `client` — owned by a customer or another party. Agents must not write to any
+  remote.
+- `own` — owned by the user. An agent may make an ordinary push only when the
+  user asks for that push and the repository's own workflow permits it.
+- Root workspace — treated as `own`, but agents never push it without a user
+  request.
 
 A discovered repository missing from the registry is treated as `client`. Never
 register or change a repository to `own` by inference; ask the user when
@@ -45,23 +51,27 @@ A request to implement, fix, commit, switch branches, or "clean things up" does
 not imply permission for these destructive operations. Prefer non-destructive
 alternatives and stop when unrelated local changes would be overwritten.
 
-## Remote writes
+## Remote writes by agents
 
 ### Client and unregistered repositories
 
-Never push a branch, tag, deletion, or any other ref to any remote. Credentials,
-an existing upstream, or a generic request to "push" do not override this rule.
-If the classification is incorrect, the user must deliberately update the
-registry before any remote write.
+An agent must never push a branch, tag, deletion, or any other ref to any remote.
+Credentials, an existing upstream, or a generic request to "push" do not
+override this rule. If the classification is incorrect, the user must
+deliberately update the registry before an agent performs a remote write.
+
+This restriction applies only to agents. The workspace owner may push directly
+according to their own judgment and repository access.
 
 ### Own repositories and root workspace
 
-Push only after the user asks for the specific remote write. Before pushing:
+An agent may push only after the user asks for the specific remote write. Before
+pushing:
 
 1. Resolve the current branch; do not push from detached HEAD.
 2. Inspect pending and staged changes.
 3. Verify any upstream branch has exactly the same branch name.
-4. Run `python3 _Mission-Control/tooling/git_guard.py status` from the workspace root.
+4. Run `python3 _Mission-Control/tooling/git_safety.py status` from the workspace root.
 5. Use an explicit same-named refspec and dry run:
 
    ```bash
@@ -69,40 +79,29 @@ Push only after the user asks for the specific remote write. Before pushing:
    git push <remote> HEAD:refs/heads/<branch>
    ```
 
-Never use a bare `git push`, `--all`, `--mirror`, `--tags`, or `--follow-tags`.
-Push a tag only with an exact tag refspec.
+Agents must not use a bare `git push`, `--all`, `--mirror`, `--tags`, or
+`--follow-tags`. Push a tag only with an exact tag refspec.
 
-## Force push and remote deletion
+## Force push and remote deletion by agents
 
 Force pushes, moving an existing remote tag, and deleting any remote ref are
 prohibited for `client` and unregistered repositories. For `own` repositories
-they require a separate explicit instruction for the exact repository and ref;
-ordinary push permission does not include them.
+they require a separate explicit user instruction for the exact repository and
+ref; ordinary push permission does not include them.
 
-The Working Deck pre-push guard intentionally blocks these operations. Do not
-bypass it with `--no-verify`. If an exceptional destructive remote operation is
-truly required, stop and let the user choose a separately reviewed procedure.
+If an exceptional destructive remote operation is requested, stop after
+verifying the request and repository class. Do not infer authorization from a
+previous ordinary push.
 
-## Pre-push guard
+## Policy enforcement boundary
 
-Install the optional guard with:
+`git_safety.py status` reports registry and repository state but does not block
+Git commands. Agents must follow this policy even when they technically possess
+write credentials.
 
-```bash
-python3 _Mission-Control/tooling/git_guard.py install
-```
-
-It applies at Git level across agent harnesses and interactive tools. The
-installer pins the current absolute workspace path into the local hook, so
-repository depth and location do not affect it and repository-owned files cannot
-redirect the guard. Reinstall hooks after moving the workspace.
-
-The guard is an accident barrier rather than a security boundary: hooks can be
-bypassed or removed. Use read-only credentials and server-side permissions for
-customer repositories whenever possible.
-
-The installer refuses to overwrite an existing pre-push hook or configured
-`core.hooksPath`. Resolve such conflicts deliberately rather than replacing a
-repository-owned workflow.
+This avoids changing the workspace owner's Git behavior or requiring special
+human overrides. A future harness extension may enforce the same policy around
+agent-issued tool calls without affecting commands run by the owner.
 
 ## Root Git isolation
 
@@ -121,6 +120,6 @@ Do not add Working Deck instructions, plans, prompts, private notes, or
 `_Mission-Control/` content to a work repository unless the user asks to change
 that repository-owned file directly.
 
-Before committing in a work repository, run `git_guard.py status` and inspect the
-staged paths. Existing committed harness configuration belongs to that
+Before committing in a work repository, run `git_safety.py status` and inspect
+the staged paths. Existing committed harness configuration belongs to that
 repository and must not be edited merely because Working Deck also uses agents.

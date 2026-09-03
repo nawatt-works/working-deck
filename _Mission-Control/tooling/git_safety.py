@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Inspect registered workspace repositories and guard remote Git writes.
+"""Inspect the Git safety registry and work repositories in a workspace.
 
 Every work repository is registered by workspace-relative path and class in
 ``_Mission-Control/git-safety.yaml``. Paths may live anywhere below the workspace
-except Mission Control itself. Repositories discovered but not registered fail
-closed as ``client`` so a forgotten registry entry never grants push permission.
+except Mission Control itself. Repositories discovered but not registered are
+reported as ``client`` so agents fail closed when following workspace policy.
 """
 
 from __future__ import annotations
@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import stat
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -22,9 +21,6 @@ from typing import Iterable
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = WORKSPACE_ROOT / "_Mission-Control" / "git-safety.yaml"
-HOOK_TEMPLATE_PATH = WORKSPACE_ROOT / "_Mission-Control" / "hooks" / "pre-push"
-HOOK_MARKER = "# Working Deck Git guard"
-HOOK_ROOT_PLACEHOLDER = "__WORKING_DECK_ROOT__"
 RESERVED_ROOTS = frozenset({".git", "_Mission-Control"})
 ARTIFACT_NAMES = frozenset(
     {"AGENTS.md", "AGENTS.override.md", "CLAUDE.md", "GIT_POLICY.md"}
@@ -53,7 +49,6 @@ class SafetyConfig:
 class RepositoryInfo:
     relative_path: str
     path: Path
-    workspace_root: Path
     common_dir: Path
     repository_class: str
     registration: str
@@ -319,7 +314,6 @@ def inspect_repositories(
         information[registration.path] = RepositoryInfo(
             registration.path,
             path,
-            workspace_root,
             common_dir,
             registration.repository_class,
             "registered",
@@ -339,7 +333,6 @@ def inspect_repositories(
         information[relative_path] = RepositoryInfo(
             relative_path,
             path,
-            workspace_root,
             common_dir,
             repository_class,
             registration_state,
@@ -400,26 +393,6 @@ def coordination_artifacts(entries: Iterable[tuple[str, str]]) -> list[str]:
     return sorted(hits)
 
 
-def hook_path(repo: RepositoryInfo) -> Path:
-    return repo.common_dir / "hooks" / "pre-push"
-
-
-def hook_state(repo: RepositoryInfo) -> str:
-    custom = git_output(repo.path, "config", "--get", "core.hooksPath")
-    if custom:
-        return f"custom:{custom}"
-    path = hook_path(repo)
-    if not path.exists():
-        return "missing"
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError):
-        return "other"
-    if HOOK_MARKER not in text:
-        return "other"
-    return "installed" if text == render_hook(repo) else "stale"
-
-
 def branch_summary(repo: Path) -> tuple[str, list[str]]:
     errors: list[str] = []
     branch = git_output(repo, "symbolic-ref", "--quiet", "--short", "HEAD")
@@ -468,10 +441,9 @@ def command_status(_args: argparse.Namespace) -> int:
 
     for repo in inspection.repositories:
         summary, branch_errors = branch_summary(repo.path)
-        state = hook_state(repo)
         print(
             f"{repo.repository_class:<6} {repo.registration:<24} "
-            f"{repo.relative_path}  {summary}  hook:{state}"
+            f"{repo.relative_path}  {summary}"
         )
         if repo.registration == "unregistered":
             errors.append(
@@ -483,11 +455,6 @@ def command_status(_args: argparse.Namespace) -> int:
             errors.append(
                 f"{repo.relative_path}: root Git does not ignore this repository; "
                 "adding it may create a gitlink"
-            )
-        if state != "installed":
-            warnings.append(
-                f"{repo.relative_path}: pre-push guard is {state}; "
-                "run git_guard.py install"
             )
         for artifact in coordination_artifacts(porcelain_entries(repo.path)):
             warnings.append(
@@ -508,168 +475,6 @@ def command_status(_args: argparse.Namespace) -> int:
     return 2 if errors else 0
 
 
-def _select_repositories(
-    repositories: tuple[RepositoryInfo, ...], requested: list[str]
-) -> list[RepositoryInfo]:
-    if not requested:
-        return list(repositories)
-    by_path = {repo.relative_path: repo for repo in repositories}
-    selected: list[RepositoryInfo] = []
-    for value in requested:
-        normalized = validate_repository_path(value)
-        if normalized not in by_path:
-            raise SafetyError(f"repository checkout not found: {normalized}")
-        selected.append(by_path[normalized])
-    return selected
-
-
-def hook_template(path: Path = HOOK_TEMPLATE_PATH) -> str:
-    try:
-        template = path.read_text(encoding="utf-8")
-    except OSError as error:
-        raise SafetyError(f"cannot read pre-push hook template: {path}") from error
-    if HOOK_MARKER not in template or HOOK_ROOT_PLACEHOLDER not in template:
-        raise SafetyError(f"invalid pre-push hook template: {path}")
-    return template
-
-
-def _shell_single_quote(value: str) -> str:
-    return "'" + value.replace("'", "'\"'\"'") + "'"
-
-
-def render_hook(repo: RepositoryInfo) -> str:
-    root = _shell_single_quote(str(repo.workspace_root.resolve()))
-    return hook_template().replace(HOOK_ROOT_PLACEHOLDER, root)
-
-
-def install_hook(repo: RepositoryInfo) -> str:
-    template = render_hook(repo)
-    custom = git_output(repo.path, "config", "--get", "core.hooksPath")
-    if custom:
-        raise SafetyError(
-            f"{repo.relative_path}: core.hooksPath is already set to {custom}; "
-            "refusing to alter repository-owned hooks"
-        )
-    path = hook_path(repo)
-    if path.exists():
-        try:
-            existing = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeError) as error:
-            raise SafetyError(
-                f"{repo.relative_path}: cannot inspect existing pre-push hook"
-            ) from error
-        if HOOK_MARKER not in existing:
-            raise SafetyError(
-                f"{repo.relative_path}: an unrelated pre-push hook already exists; "
-                "refusing to overwrite it"
-            )
-        if existing == template:
-            return "already installed"
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(template, encoding="utf-8")
-    path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    return "installed"
-
-
-def command_install(args: argparse.Namespace) -> int:
-    try:
-        inspection = inspect_repositories()
-        selected = _select_repositories(inspection.repositories, args.repositories)
-        seen_hooks: set[Path] = set()
-        for repo in selected:
-            path = hook_path(repo)
-            if path in seen_hooks:
-                print(f"shared {repo.relative_path}  uses an already processed Git common dir")
-                continue
-            seen_hooks.add(path)
-            result = install_hook(repo)
-            print(f"{result:<17} {repo.relative_path}")
-    except (OSError, SafetyError) as error:
-        print(f"error: {error}", file=sys.stderr)
-        return 2
-    return 0
-
-
-def _is_zero_oid(value: str) -> bool:
-    return bool(value) and set(value) == {"0"}
-
-
-def validate_push_line(repo: Path, line: str) -> str | None:
-    fields = line.split()
-    if len(fields) != 4:
-        return "cannot parse the refs Git intends to push"
-    local_ref, local_oid, remote_ref, remote_oid = fields
-    if local_ref == "(delete)" or _is_zero_oid(local_oid):
-        return f"remote ref deletion is blocked: {remote_ref}"
-
-    if local_ref == "HEAD":
-        branch = git_output(repo, "symbolic-ref", "--quiet", "--short", "HEAD")
-        if branch is None:
-            return "pushing from detached HEAD is blocked"
-        local_ref = f"refs/heads/{branch}"
-
-    if local_ref.startswith("refs/heads/") and remote_ref.startswith("refs/heads/"):
-        if local_ref != remote_ref:
-            return f"local and remote branch names must match: {local_ref} -> {remote_ref}"
-        if _is_zero_oid(remote_oid):
-            return None
-        result = run_git(repo, "merge-base", "--is-ancestor", remote_oid, local_oid)
-        if result.returncode != 0:
-            return f"non-fast-forward or unverifiable branch update is blocked: {remote_ref}"
-        return None
-
-    if local_ref.startswith("refs/tags/") and remote_ref.startswith("refs/tags/"):
-        if local_ref != remote_ref:
-            return f"local and remote tag names must match: {local_ref} -> {remote_ref}"
-        if not _is_zero_oid(remote_oid):
-            return f"moving an existing remote tag is blocked: {remote_ref}"
-        return None
-
-    return f"unsupported ref update is blocked: {local_ref} -> {remote_ref}"
-
-
-def command_pre_push(_args: argparse.Namespace) -> int:
-    try:
-        config = load_config()
-        repository_root_text = git_output(Path.cwd(), "rev-parse", "--show-toplevel")
-        if repository_root_text is None:
-            raise SafetyError("pre-push guard is not running inside a Git working tree")
-        repository_root = Path(repository_root_text).resolve()
-        inspection = inspect_repositories(config=config)
-        match = next(
-            (
-                repo
-                for repo in inspection.repositories
-                if repo.path.resolve() == repository_root
-            ),
-            None,
-        )
-        if match is None:
-            raise SafetyError("repository is outside this Working Deck workspace")
-        if match.repository_class == "client":
-            raise SafetyError(
-                f"all remote writes are blocked for client repository: {match.relative_path}"
-            )
-
-        errors = [
-            error
-            for line in sys.stdin.read().splitlines()
-            if line.strip()
-            if (error := validate_push_line(match.path, line)) is not None
-        ]
-        if errors:
-            raise SafetyError("; ".join(errors))
-    except SafetyError as error:
-        print(f"Working Deck blocked this push: {error}", file=sys.stderr)
-        print(
-            "The hook can be bypassed, so remote permissions remain the hard boundary.",
-            file=sys.stderr,
-        )
-        return 1
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -678,24 +483,6 @@ def build_parser() -> argparse.ArgumentParser:
         "status", help="inspect registered and discovered workspace repositories"
     )
     status_parser.set_defaults(handler=command_status)
-
-    install_parser = subparsers.add_parser(
-        "install", help="install the optional pre-push guard without overwriting hooks"
-    )
-    install_parser.add_argument(
-        "repositories",
-        nargs="*",
-        metavar="PATH",
-        help="specific workspace-relative paths; omit to install for every checkout",
-    )
-    install_parser.set_defaults(handler=command_install)
-
-    pre_push_parser = subparsers.add_parser(
-        "pre-push", help="internal entry point used by the installed Git hook"
-    )
-    pre_push_parser.add_argument("remote_name", nargs="?")
-    pre_push_parser.add_argument("remote_url", nargs="?")
-    pre_push_parser.set_defaults(handler=command_pre_push)
     return parser
 
 
